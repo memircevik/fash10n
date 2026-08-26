@@ -1,8 +1,12 @@
-from .models import ClothingItem, Outfit
-from .serializers import (
-    ClothingItemSerializer,
-    OutfitSerializer,
-)
+import base64
+import json
+import urllib.request
+
+from io import BytesIO
+
+from PIL import Image
+
+from django.http import HttpResponse
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,7 +14,11 @@ from rest_framework import status
 from rest_framework import permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from django.http import HttpResponse
+from .models import ClothingItem, Outfit
+from .serializers import (
+    ClothingItemSerializer,
+    OutfitSerializer,
+)
 
 
 class RemoveBackgroundView(APIView):
@@ -44,7 +52,10 @@ class RemoveBackgroundView(APIView):
             )
 
         except Exception as error:
-            print("Background removal error:", error)
+            print(
+                "Background removal error:",
+                error
+            )
 
             return Response(
                 {"detail": "Arka plan silinemedi."},
@@ -67,7 +78,9 @@ class ClothingItemView(APIView):
             many=True
         )
 
-        return Response(serializer.data)
+        return Response(
+            serializer.data
+        )
 
     def post(self, request):
         serializer = ClothingItemSerializer(
@@ -83,6 +96,11 @@ class ClothingItemView(APIView):
                 serializer.data,
                 status=status.HTTP_201_CREATED
             )
+
+        print(
+            "CLOTHING SERIALIZER ERROR:",
+            serializer.errors
+        )
 
         return Response(
             serializer.errors,
@@ -119,7 +137,9 @@ class OutfitView(APIView):
     def get(self, request):
         outfits = (
             Outfit.objects
-            .filter(user=request.user)
+            .filter(
+                user=request.user
+            )
             .prefetch_related("items")
             .order_by("-created_at")
         )
@@ -129,21 +149,32 @@ class OutfitView(APIView):
             many=True
         )
 
-        return Response(serializer.data)
+        return Response(
+            serializer.data
+        )
 
     def post(self, request):
         name = request.data.get("name")
-        item_ids = request.data.get("items", [])
+        item_ids = request.data.get(
+            "items",
+            []
+        )
 
         if not name:
             return Response(
-                {"detail": "Kombin adı gerekli."},
+                {
+                    "detail":
+                        "Kombin adı gerekli."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if not item_ids:
             return Response(
-                {"detail": "En az bir kıyafet seçmelisin."},
+                {
+                    "detail":
+                        "En az bir kıyafet seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -155,7 +186,10 @@ class OutfitView(APIView):
 
         if clothing_items.count() != len(item_ids):
             return Response(
-                {"detail": "Geçersiz kıyafet seçimi."},
+                {
+                    "detail":
+                        "Geçersiz kıyafet seçimi."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -168,19 +202,28 @@ class OutfitView(APIView):
 
         if "top" not in categories:
             return Response(
-                {"detail": "Üst giyim seçmelisin."},
+                {
+                    "detail":
+                        "Üst giyim seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if "bottom" not in categories:
             return Response(
-                {"detail": "Alt giyim seçmelisin."},
+                {
+                    "detail":
+                        "Alt giyim seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if "footwear" not in categories:
             return Response(
-                {"detail": "Ayakkabı seçmelisin."},
+                {
+                    "detail":
+                        "Ayakkabı seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -189,7 +232,9 @@ class OutfitView(APIView):
             name=name
         )
 
-        outfit.items.set(clothing_items)
+        outfit.items.set(
+            clothing_items
+        )
 
         serializer = OutfitSerializer(
             outfit
@@ -209,22 +254,34 @@ class OutfitView(APIView):
 
         except Outfit.DoesNotExist:
             return Response(
-                {"detail": "Kombin bulunamadı."},
+                {
+                    "detail":
+                        "Kombin bulunamadı."
+                },
                 status=status.HTTP_404_NOT_FOUND
             )
 
         name = request.data.get("name")
-        item_ids = request.data.get("items", [])
+        item_ids = request.data.get(
+            "items",
+            []
+        )
 
         if not name:
             return Response(
-                {"detail": "Kombin adı gerekli."},
+                {
+                    "detail":
+                        "Kombin adı gerekli."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if not item_ids:
             return Response(
-                {"detail": "En az bir kıyafet seçmelisin."},
+                {
+                    "detail":
+                        "En az bir kıyafet seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -236,7 +293,10 @@ class OutfitView(APIView):
 
         if clothing_items.count() != len(item_ids):
             return Response(
-                {"detail": "Geçersiz kıyafet seçimi."},
+                {
+                    "detail":
+                        "Geçersiz kıyafet seçimi."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -249,26 +309,40 @@ class OutfitView(APIView):
 
         if "top" not in categories:
             return Response(
-                {"detail": "Üst giyim seçmelisin."},
+                {
+                    "detail":
+                        "Üst giyim seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if "bottom" not in categories:
             return Response(
-                {"detail": "Alt giyim seçmelisin."},
+                {
+                    "detail":
+                        "Alt giyim seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if "footwear" not in categories:
             return Response(
-                {"detail": "Ayakkabı seçmelisin."},
+                {
+                    "detail":
+                        "Ayakkabı seçmelisin."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         outfit.name = name
-        outfit.save(update_fields=["name"])
 
-        outfit.items.set(clothing_items)
+        outfit.save(
+            update_fields=["name"]
+        )
+
+        outfit.items.set(
+            clothing_items
+        )
 
         serializer = OutfitSerializer(
             outfit
@@ -288,7 +362,10 @@ class OutfitView(APIView):
 
         except Outfit.DoesNotExist:
             return Response(
-                {"detail": "Kombin bulunamadı."},
+                {
+                    "detail":
+                        "Kombin bulunamadı."
+                },
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -297,3 +374,356 @@ class OutfitView(APIView):
         return Response(
             status=status.HTTP_204_NO_CONTENT
         )
+
+
+class AnalyzeClothingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_main_color(self, image_bytes):
+        image = Image.open(
+            BytesIO(image_bytes)
+        ).convert("RGBA")
+
+        pixels = []
+
+        for r, g, b, a in image.getdata():
+            if a < 30:
+                continue
+
+            brightness = (r + g + b) / 3
+
+            if brightness > 245:
+                continue
+
+            pixels.append(
+                (r, g, b)
+            )
+
+        if not pixels:
+            return "#808080"
+
+        sample_limit = 20000
+
+        if len(pixels) > sample_limit:
+            step = len(pixels) // sample_limit
+            pixels = pixels[::step]
+
+        red = (
+            sum(
+                pixel[0]
+                for pixel in pixels
+            )
+            / len(pixels)
+        )
+
+        green = (
+            sum(
+                pixel[1]
+                for pixel in pixels
+            )
+            / len(pixels)
+        )
+
+        blue = (
+            sum(
+                pixel[2]
+                for pixel in pixels
+            )
+            / len(pixels)
+        )
+
+        return "#{:02X}{:02X}{:02X}".format(
+            round(red),
+            round(green),
+            round(blue)
+        )
+
+    def post(self, request):
+        image = request.FILES.get("image")
+
+        if not image:
+            return Response(
+                {
+                    "detail":
+                        "Fotoğraf bulunamadı."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            image_bytes = image.read()
+
+            image_base64 = base64.b64encode(
+                image_bytes
+            ).decode("utf-8")
+
+            schema = {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "top",
+                            "bottom",
+                            "outerwear",
+                            "footwear",
+                            "accessory"
+                        ]
+                    },
+                    "season": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "spring",
+                                "summer",
+                                "fall",
+                                "winter"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "uniqueItems": True
+                    }
+                },
+                "required": [
+                    "category",
+                    "season"
+                ]
+            }
+
+            prompt = """
+Analyze this clothing item.
+
+Return ONLY JSON.
+
+category must be exactly one of:
+
+top
+bottom
+outerwear
+footwear
+accessory
+
+season must be an array.
+
+Choose every season in which the item is genuinely and typically appropriate.
+
+Possible seasons:
+
+spring
+summer
+fall
+winter
+
+Use the following guidelines:
+
+spring:
+lightweight or transitional clothing suitable for mild weather
+
+summer:
+warm weather, lightweight, breathable, short-sleeve or summer clothing
+
+fall:
+cooler weather, medium-weight clothing, layering pieces
+
+winter:
+cold weather, heavy, insulating, or clearly winter-oriented clothing
+
+Important:
+
+Do not include spring by default.
+
+Do not include winter unless the item is genuinely suitable for cold weather.
+
+Do not include a season only because layering could make the item wearable.
+
+Do not select most seasons unless the item is genuinely versatile.
+
+When uncertain, choose fewer seasons.
+
+Examples:
+
+short-sleeve t-shirt:
+["spring", "summer"]
+
+light polo shirt:
+["spring", "summer"]
+
+hoodie:
+["spring", "fall", "winter"]
+
+heavy winter coat:
+["fall", "winter"]
+
+shorts:
+["spring", "summer"]
+
+sandals:
+["spring", "summer"]
+
+watch:
+["spring", "summer", "fall", "winter"]
+
+Do not return color.
+
+Do not return style.
+
+Do not return explanation.
+
+Do not return markdown.
+
+Return only the JSON object.
+"""
+
+            payload = {
+                "model": "gemma3:4b",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt,
+                        "images": [
+                            image_base64
+                        ]
+                    }
+                ],
+                "format": schema,
+                "stream": False,
+                "options": {
+                    "temperature": 0
+                }
+            }
+
+            ollama_request = urllib.request.Request(
+                "http://127.0.0.1:11434/api/chat",
+                data=json.dumps(
+                    payload
+                ).encode("utf-8"),
+                headers={
+                    "Content-Type":
+                        "application/json"
+                },
+                method="POST"
+            )
+
+            with urllib.request.urlopen(
+                ollama_request,
+                timeout=180
+            ) as response:
+                response_data = json.loads(
+                    response.read().decode("utf-8")
+                )
+
+            content = (
+                response_data
+                .get("message", {})
+                .get("content", "")
+            )
+
+            if not content:
+                raise ValueError(
+                    "AI boş cevap döndürdü."
+                )
+
+            result = json.loads(
+                content
+            )
+
+            print(
+                "AI RESULT:",
+                result
+            )
+
+            category = result.get(
+                "category"
+            )
+
+            season = result.get(
+                "season"
+            )
+
+            allowed_categories = {
+                "top",
+                "bottom",
+                "outerwear",
+                "footwear",
+                "accessory"
+            }
+
+            allowed_seasons = {
+                "spring",
+                "summer",
+                "fall",
+                "winter"
+            }
+
+            if category not in allowed_categories:
+                raise ValueError(
+                    "Geçersiz kategori."
+                )
+
+            if (
+                not isinstance(
+                    season,
+                    list
+                )
+                or len(season) == 0
+                or len(season) > 4
+                or any(
+                    item
+                    not in allowed_seasons
+                    for item in season
+                )
+                or len(set(season))
+                != len(season)
+            ):
+                raise ValueError(
+                    "Geçersiz mevsim."
+                )
+
+            color = self.get_main_color(
+                image_bytes
+            )
+
+            print(
+                "COLOR RESULT:",
+                color
+            )
+
+            return Response(
+                {
+                    "category": category,
+                    "color": color,
+                    "season": season
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except json.JSONDecodeError as error:
+            print(
+                "Clothing AI JSON error:",
+                error
+            )
+
+            return Response(
+                {
+                    "detail":
+                        "AI geçerli JSON döndürmedi."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as error:
+            print(
+                "Clothing AI analysis error:",
+                error
+            )
+
+            return Response(
+                {
+                    "detail":
+                        "Kıyafet AI tarafından analiz edilemedi."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

@@ -75,7 +75,17 @@ export async function addClothingItems(image, category, season, color) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.detail || "Kıyafet eklenemedi.");
+    console.error("ADD CLOTHING BACKEND ERROR:", data);
+
+    const errorMessage =
+      data.detail ||
+      data.season?.[0] ||
+      data.category?.[0] ||
+      data.color?.[0] ||
+      data.image?.[0] ||
+      "Kıyafet eklenemedi.";
+
+    throw new Error(errorMessage);
   }
 
   return data;
@@ -340,6 +350,48 @@ export async function updateOutfit(id, name, items) {
 
   if (!response.ok) {
     throw new Error(data.detail || "Kombin güncellenemedi.");
+  }
+
+  return data;
+}
+
+export async function analyzeClothing(imageFile) {
+  let accessToken = localStorage.getItem("access_token");
+
+  const formData = new FormData();
+
+  formData.append("image", imageFile);
+
+  let response = await fetch(
+    "http://127.0.0.1:8000/api/wardrobe/analyze-clothing/",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    },
+  );
+
+  if (response.status === 401) {
+    accessToken = await refreshAccessToken();
+
+    response = await fetch(
+      "http://127.0.0.1:8000/api/wardrobe/analyze-clothing/",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      },
+    );
+  }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Kıyafet analiz edilemedi.");
   }
 
   return data;

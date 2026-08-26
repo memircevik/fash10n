@@ -4,6 +4,7 @@ import {
   addClothingItems,
   removeClothingItem,
   removeBackground,
+  analyzeClothing,
 } from "../services/wardrobe";
 
 import Navbar from "../components/navbar";
@@ -19,6 +20,20 @@ import shoIcon from "../assets/shoe.png";
 import accIcon from "../assets/acc.png";
 import removeIcon from "../assets/trashcan.png";
 
+import springfallIcon from "../assets/springfall.png";
+import springsummerIcon from "../assets/springsummer.png";
+import springwinterIcon from "../assets/winterspring.png";
+import summerfallIcon from "../assets/summerfall.png";
+import summerwinterIcon from "../assets/wintersummer.png";
+import fallwinterIcon from "../assets/winterfall.png";
+
+import springsummerfallIcon from "../assets/summerspringfall.png";
+import springsummerwinterIcon from "../assets/summerspringwinter.png";
+import springfallwinterIcon from "../assets/winterfallspring.png";
+import summerfallwinterIcon from "../assets/summerfallwinter.png";
+
+import fourSeasonsIcon from "../assets/fourseasons.png";
+
 function Wardrobe() {
   const [clothingItems, setClothingItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -33,7 +48,7 @@ function Wardrobe() {
   const [isRemovingBackground, setIsRemovingBackground] = useState(false);
 
   const [category, setCategory] = useState("top");
-  const [season, setSeason] = useState("summer");
+  const [season, setSeason] = useState(["summer"]);
   const [color, setColor] = useState("#000000");
 
   const [uploadError, setUploadError] = useState("");
@@ -96,6 +111,75 @@ function Wardrobe() {
     fileInputRef.current?.click();
   };
 
+  const normalizeSeasons = (value) => {
+    const validSeasons = ["spring", "summer", "fall", "winter"];
+
+    if (Array.isArray(value)) {
+      const normalized = value.filter((item) => validSeasons.includes(item));
+
+      return normalized.length > 0 ? normalized : ["summer"];
+    }
+
+    if (typeof value === "string" && validSeasons.includes(value)) {
+      return [value];
+    }
+
+    return ["summer"];
+  };
+
+  const getSeasonIcon = (value) => {
+    const seasons = normalizeSeasons(value);
+
+    const ordered = ["spring", "summer", "fall", "winter"].filter(
+      (seasonName) => seasons.includes(seasonName),
+    );
+
+    const key = ordered.join("");
+
+    const icons = {
+      spring: springIcon,
+      summer: summerIcon,
+      fall: fallIcon,
+      winter: winterIcon,
+
+      springsummer: springsummerIcon,
+      springfall: springfallIcon,
+      springwinter: springwinterIcon,
+      summerfall: summerfallIcon,
+      summerwinter: summerwinterIcon,
+      fallwinter: fallwinterIcon,
+
+      springsummerfall: springsummerfallIcon,
+      springsummerwinter: springsummerwinterIcon,
+      springfallwinter: springfallwinterIcon,
+      summerfallwinter: summerfallwinterIcon,
+
+      springsummerfallwinter: fourSeasonsIcon,
+    };
+
+    return icons[key] || fourSeasonsIcon;
+  };
+
+  const getCategoryIcon = (value) => {
+    if (value === "top") {
+      return topIcon;
+    }
+
+    if (value === "bottom") {
+      return bottomIcon;
+    }
+
+    if (value === "outerwear") {
+      return outIcon;
+    }
+
+    if (value === "footwear") {
+      return shoIcon;
+    }
+
+    return accIcon;
+  };
+
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
 
@@ -104,7 +188,14 @@ function Wardrobe() {
     }
 
     setSelectedFile(file);
+    setProcessedFile(null);
+    setPreviewUrl("");
     setUploadError("");
+
+    setCategory("top");
+    setSeason(["summer"]);
+    setColor("#000000");
+
     setIsRemovingBackground(true);
 
     try {
@@ -116,6 +207,22 @@ function Wardrobe() {
 
       setProcessedFile(processed);
 
+      const analysis = await analyzeClothing(processed);
+
+      console.log("AI clothing analysis:", analysis);
+
+      if (analysis.category) {
+        setCategory(analysis.category);
+      }
+
+      if (analysis.color) {
+        setColor(analysis.color);
+      }
+
+      if (analysis.season) {
+        setSeason(normalizeSeasons(analysis.season));
+      }
+
       const preview = URL.createObjectURL(blob);
 
       setPreviewUrl(preview);
@@ -123,20 +230,58 @@ function Wardrobe() {
     } catch (error) {
       console.error("Background removal error:", error);
 
-      setUploadError(error.message || "Fotoğrafın arka planı silinemedi.");
-
-      // Arka plan silinemezse orijinal fotoğrafı göster
       setProcessedFile(file);
 
       const fallbackPreview = URL.createObjectURL(file);
 
       setPreviewUrl(fallbackPreview);
       setShowUpload(true);
+
+      try {
+        const analysis = await analyzeClothing(file);
+
+        console.log("AI clothing analysis:", analysis);
+
+        if (analysis.category) {
+          setCategory(analysis.category);
+        }
+
+        if (analysis.color) {
+          setColor(analysis.color);
+        }
+
+        if (analysis.season) {
+          setSeason(normalizeSeasons(analysis.season));
+        }
+
+        setUploadError("");
+      } catch (analysisError) {
+        console.error("Clothing AI analysis error:", analysisError);
+
+        setUploadError(
+          analysisError.message ||
+            error.message ||
+            "Fotoğraf analiz edilemedi.",
+        );
+      }
     } finally {
       setIsRemovingBackground(false);
-
       event.target.value = "";
     }
+  };
+
+  const toggleSeason = (seasonKey) => {
+    setSeason((current) => {
+      if (current.includes(seasonKey)) {
+        if (current.length === 1) {
+          return current;
+        }
+
+        return current.filter((item) => item !== seasonKey);
+      }
+
+      return [...current, seasonKey];
+    });
   };
 
   const handleUpload = async () => {
@@ -144,22 +289,60 @@ function Wardrobe() {
       setUploadError("Lütfen bir fotoğraf seçin.");
       return;
     }
+
+    if (!processedFile) {
+      setUploadError("Fotoğraf hazırlanamadı.");
+      return;
+    }
+
+    if (!Array.isArray(season) || season.length === 0) {
+      setUploadError("En az bir mevsim seçmelisin.");
+      return;
+    }
+
     try {
       setUploadError("");
 
       await addClothingItems(processedFile, category, season, color);
 
       const updatedItems = await getClothingItems();
-      setClothingItems(updatedItems);
+
+      if (Array.isArray(updatedItems)) {
+        setClothingItems(updatedItems);
+      } else if (Array.isArray(updatedItems.results)) {
+        setClothingItems(updatedItems.results);
+      }
 
       setShowUpload(false);
       setSelectedFile(null);
+      setProcessedFile(null);
       setPreviewUrl("");
       setUploadError("");
+
+      setCategory("top");
+      setSeason(["summer"]);
+      setColor("#000000");
     } catch (error) {
       console.error("Upload error:", error);
+
       setUploadError(error.message || "Kıyafet eklenemedi.");
     }
+  };
+
+  const closeUpload = () => {
+    if (isRemovingBackground) {
+      return;
+    }
+
+    setShowUpload(false);
+    setSelectedFile(null);
+    setProcessedFile(null);
+    setPreviewUrl("");
+    setUploadError("");
+
+    setCategory("top");
+    setSeason(["summer"]);
+    setColor("#000000");
   };
 
   return (
@@ -168,9 +351,7 @@ function Wardrobe() {
         <div className="background-removal-overlay">
           <div className="background-removal-loader">
             <div className="background-removal-spinner"></div>
-
             <p>Kıyafetin hazırlanıyor...</p>
-
             <span>Arka plan kaldırılıyor...</span>
           </div>
         </div>
@@ -180,18 +361,18 @@ function Wardrobe() {
 
       <main className="wardrobe-page">
         <div className="wardrobe-categories">
-          {categories.map((category) => (
+          {categories.map((categoryItem) => (
             <button
-              key={category.key}
+              key={categoryItem.key}
               type="button"
               className={
-                activeCategory === category.key
+                activeCategory === categoryItem.key
                   ? "category-button active"
                   : "category-button"
               }
-              onClick={() => setActiveCategory(category.key)}
+              onClick={() => setActiveCategory(categoryItem.key)}
             >
-              {category.label}
+              {categoryItem.label}
             </button>
           ))}
         </div>
@@ -222,41 +403,26 @@ function Wardrobe() {
               </div>
 
               <div className="clothing-meta">
-                <div className="meta-item">
+                <div
+                  className="meta-item"
+                  title={normalizeSeasons(item.season).join(", ")}
+                >
                   <img
-                    className="meta-icon"
-                    src={
-                      item.season === "summer"
-                        ? summerIcon
-                        : item.season === "spring"
-                          ? springIcon
-                          : item.season === "fall"
-                            ? fallIcon
-                            : winterIcon
-                    }
+                    className="meta-icon season-meta-icon"
+                    src={getSeasonIcon(item.season)}
                     alt=""
                   />
                 </div>
 
-                <div className="meta-item">
+                <div className="meta-item" title={item.category}>
                   <img
                     className="meta-icon"
-                    src={
-                      item.category === "top"
-                        ? topIcon
-                        : item.category === "bottom"
-                          ? bottomIcon
-                          : item.category === "outerwear"
-                            ? outIcon
-                            : item.category === "footwear"
-                              ? shoIcon
-                              : accIcon
-                    }
+                    src={getCategoryIcon(item.category)}
                     alt=""
                   />
                 </div>
 
-                <div className="meta-item">
+                <div className="meta-item" title={item.color}>
                   <span
                     className="color-dot"
                     style={{
@@ -264,7 +430,9 @@ function Wardrobe() {
                     }}
                   />
                 </div>
+
                 <button
+                  type="button"
                   className="remove-clothing-button"
                   onClick={() => handleRemoveClothing(item.id)}
                 >
@@ -274,6 +442,7 @@ function Wardrobe() {
             </div>
           ))}
         </div>
+
         {showUpload && (
           <div className="upload-overlay">
             <div className="upload-modal">
@@ -295,16 +464,12 @@ function Wardrobe() {
 
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(event) => setCategory(event.target.value)}
                   >
                     <option value="top">Üst Giyim</option>
-
                     <option value="bottom">Alt Giyim</option>
-
                     <option value="outerwear">Dış Giyim</option>
-
                     <option value="footwear">Ayakkabı</option>
-
                     <option value="accessory">Aksesuar</option>
                   </select>
                 </div>
@@ -312,18 +477,35 @@ function Wardrobe() {
                 <div className="upload-field">
                   <label>Mevsim</label>
 
-                  <select
-                    value={season}
-                    onChange={(e) => setSeason(e.target.value)}
-                  >
-                    <option value="spring">İlkbahar</option>
+                  <div className="season-options">
+                    {[
+                      ["spring", "İlkbahar"],
+                      ["summer", "Yaz"],
+                      ["fall", "Sonbahar"],
+                      ["winter", "Kış"],
+                    ].map(([key, label]) => (
+                      <label
+                        key={key}
+                        className={
+                          season.includes(key)
+                            ? "season-option selected"
+                            : "season-option"
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={season.includes(key)}
+                          onChange={() => toggleSeason(key)}
+                        />
 
-                    <option value="summer">Yaz</option>
+                        <span>{label}</span>
+                      </label>
+                    ))}
+                  </div>
 
-                    <option value="fall">Sonbahar</option>
-
-                    <option value="winter">Kış</option>
-                  </select>
+                  <small className="season-help">
+                    Birden fazla mevsim seçebilirsin.
+                  </small>
                 </div>
 
                 <div className="upload-field">
@@ -332,7 +514,7 @@ function Wardrobe() {
                   <input
                     type="color"
                     value={color}
-                    onChange={(e) => setColor(e.target.value)}
+                    onChange={(event) => setColor(event.target.value)}
                   />
                 </div>
 
@@ -341,17 +523,17 @@ function Wardrobe() {
                 <div className="upload-actions">
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowUpload(false);
-                      setSelectedFile(null);
-                      setPreviewUrl("");
-                      setUploadError("");
-                    }}
+                    onClick={closeUpload}
+                    disabled={isRemovingBackground}
                   >
                     İptal
                   </button>
 
-                  <button type="button" onClick={handleUpload}>
+                  <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={isRemovingBackground}
+                  >
                     Onayla
                   </button>
                 </div>
