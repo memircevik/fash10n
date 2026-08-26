@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import profileIcon from "../assets/profil.png";
+import logo from "../assets/logo.png";
 
 function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -10,14 +11,37 @@ function Navbar() {
 
             <div className="navbar-left">
                 <div className="navbar-brand">
-                    Fash10n
+                    <img src={logo} alt="Fash10n" />
+                    <span>Fash10n</span>
                 </div>
 
                 <div className="navbar-links">
-                    <Link to="/home">Home</Link>
-                    <Link to="/wardrobe">Gardırobum</Link>
-                    <Link to="/explore">Keşfet</Link>
-                    <Link to="/outfits">Kombinlerim</Link>
+                    <NavLink to = "/home" className= {({ isActive }) =>
+                    isActive ? "active": ""
+                }
+                > Anasayfa </NavLink>
+                </div>
+
+                <div className="navbar-links">
+                    <NavLink to = "/wardrobe" className= {({ isActive }) =>
+                    isActive ? "active": ""
+                }
+                > Gardırobum </NavLink>
+                </div>
+
+                <div className="navbar-links">
+                    <NavLink to = "/explore" className= {({ isActive }) =>
+                    isActive ? "active": ""
+                }
+                > Keşfet </NavLink>
+                </div>
+
+                <div className="navbar-links">
+                    <NavLink to = "/outfits" className= {({ isActive }) =>
+                    isActive ? "active": ""
+                }
+                > Kombinler </NavLink>
+
                 </div>
             </div>
 
