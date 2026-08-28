@@ -4,6 +4,7 @@ from .views import (
     ClothingItemView,
     RemoveBackgroundView,
     OutfitView,
+    AnalyzeClothingView,
 )
 
 urlpatterns = [
@@ -29,6 +30,12 @@ urlpatterns = [
         "outfits/",
         OutfitView.as_view(),
         name="outfits",
+    ),
+
+    path(
+        "analyze-clothing/",
+        AnalyzeClothingView.as_view(),
+        name="analyze-clothing",
     ),
 
     path(

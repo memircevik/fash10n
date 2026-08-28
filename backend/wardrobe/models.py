@@ -12,7 +12,8 @@ class ClothingItem(models.Model):
         max_length=20,
         choices=[
             ("top", "Top"),
-            ("bottom", "Bottom"),
+            ("pants", "Pants"),
+            ("shorts", "Shorts"),
             ("outerwear", "Outerwear"),
             ("footwear", "Footwear"),
             ("accessory", "Accessory"),

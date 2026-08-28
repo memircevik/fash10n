@@ -54,6 +54,7 @@ function Home() {
     const now = new Date();
 
     const year = now.getFullYear();
+
     const month = String(now.getMonth() + 1).padStart(2, "0");
 
     const day = String(now.getDate()).padStart(2, "0");
@@ -63,10 +64,6 @@ function Home() {
 
   /* =========================
      GARDIROP
-     
-     Bugünün kombinini oluşturmak
-     için sayfa açılır açılmaz
-     gardırobu çekiyoruz.
   ========================= */
 
   useEffect(() => {
@@ -149,7 +146,9 @@ function Home() {
     return {
       top: clothingItems.filter((item) => item.category === "top"),
 
-      bottom: clothingItems.filter((item) => item.category === "bottom"),
+      bottom: clothingItems.filter(
+        (item) => item.category === "pants" || item.category === "shorts",
+      ),
 
       outerwear: clothingItems.filter((item) => item.category === "outerwear"),
 
@@ -161,9 +160,6 @@ function Home() {
 
   /* =========================
      BASİT HASH
-     
-     Aynı tarih + aynı index
-     aynı kombini üretir.
   ========================= */
 
   const createSeed = (text) => {
@@ -184,11 +180,6 @@ function Home() {
 
   const generateTodayOutfit = (index = 0) => {
     const { top, bottom, footwear, outerwear, accessory } = categoryItems;
-
-    /*
-     * Temel kombin için gerekenler
-     * yoksa kombin üretemeyiz.
-     */
 
     if (!top.length || !bottom.length || !footwear.length) {
       setTodayOutfit(null);
@@ -214,21 +205,11 @@ function Home() {
 
     const selectedFootwear = footwear[footwearSeed % footwear.length];
 
-    /*
-     * Dış giyim yaklaşık %50 ihtimalle
-     * eklensin.
-     */
-
     let selectedOuterwear = null;
 
     if (outerwear.length && outerSeed % 2 === 0) {
       selectedOuterwear = outerwear[outerSeed % outerwear.length];
     }
-
-    /*
-     * Aksesuar yaklaşık %50 ihtimalle
-     * eklensin.
-     */
 
     let selectedAccessory = null;
 
@@ -261,10 +242,6 @@ function Home() {
       return;
     }
 
-    /*
-     * Aynı gün için ilk öneri.
-     */
-
     generateTodayOutfit(todayOutfitIndex);
   }, [
     categoryItems.top.length,
@@ -291,7 +268,7 @@ function Home() {
   const moveCarousel = (category, direction) => {
     const items = categoryItems[category];
 
-    if (!items.length) {
+    if (!items?.length) {
       return;
     }
 
@@ -359,7 +336,7 @@ function Home() {
         <button
           type="button"
           className="carousel-arrow"
-          disabled={items.length === 0}
+          disabled={!items || items.length === 0}
           onClick={(event) => {
             event.stopPropagation();
 
@@ -380,7 +357,9 @@ function Home() {
             />
           ) : (
             <div className="carousel-placeholder">
-              {items.length === 0 ? "Bu kategoride kıyafet yok." : "Parça yok"}
+              {!items || items.length === 0
+                ? "Bu kategoride kıyafet yok."
+                : "Parça yok"}
             </div>
           )}
         </div>
@@ -388,7 +367,7 @@ function Home() {
         <button
           type="button"
           className="carousel-arrow"
-          disabled={items.length === 0}
+          disabled={!items || items.length === 0}
           onClick={(event) => {
             event.stopPropagation();
 
@@ -518,7 +497,7 @@ function Home() {
   };
 
   /* =========================
-     BUGÜNÜN KOMBİN PREVIEW
+     BUGÜNÜN KOMBİN PARÇASI
   ========================= */
 
   const renderTodayOutfitPiece = (item, category) => {
@@ -526,13 +505,55 @@ function Home() {
       return null;
     }
 
+    let className = "today-outfit-" + category;
+
+    if (category === "bottom") {
+      if (item.category === "shorts") {
+        className = "today-outfit-bottom-short";
+      } else if (item.category === "pants") {
+        className = "today-outfit-bottom";
+      }
+    }
+
     return (
       <img
         src={"http://127.0.0.1:8000" + item.image}
-        alt={category}
-        className={"today-outfit-" + category}
+        alt={
+          item.category === "shorts"
+            ? "Şort"
+            : item.category === "pants"
+              ? "Pantolon"
+              : category
+        }
+        className={className}
       />
     );
+  };
+
+  /* =========================
+     BUGÜNÜN AKSESUARLARI
+  ========================= */
+
+  const renderTodayAccessories = () => {
+    if (Array.isArray(todayOutfit?.accessories)) {
+      return todayOutfit.accessories.map((item, index) => (
+        <img
+          key={item.id ?? `accessory-${index}`}
+          src={"http://127.0.0.1:8000" + item.image}
+          alt="Aksesuar"
+          className="today-outfit-accessory"
+          style={{
+            top: 200 + index * 62,
+          }}
+        />
+      ));
+    }
+
+    if (todayOutfit?.accessory) {
+      return renderTodayOutfitPiece(todayOutfit.accessory, "accessory");
+    }
+
+    return null;
   };
 
   return (
@@ -578,7 +599,7 @@ function Home() {
 
                   {renderTodayOutfitPiece(todayOutfit.footwear, "footwear")}
 
-                  {renderTodayOutfitPiece(todayOutfit.accessory, "accessory")}
+                  {renderTodayAccessories()}
                 </div>
               ) : (
                 <div className="today-outfit-empty">
@@ -599,8 +620,6 @@ function Home() {
           <div className="home-card">
             <div className="home-card-image recent-outfit-card">
               <div className="outfit-stacks">
-                {/* 3. kombin */}
-
                 {recentOutfits[2] && (
                   <div
                     className="outfit-stack-card outfit-back"
@@ -621,8 +640,6 @@ function Home() {
                   </div>
                 )}
 
-                {/* 2. kombin */}
-
                 {recentOutfits[1] && (
                   <div
                     className="outfit-stack-card outfit-middle"
@@ -642,8 +659,6 @@ function Home() {
                     </div>
                   </div>
                 )}
-
-                {/* En yeni */}
 
                 {recentOutfits[0] && (
                   <div
@@ -737,8 +752,16 @@ function Home() {
                         src={
                           "http://127.0.0.1:8000" + selectedItems.bottom.image
                         }
-                        alt="Alt Giyim"
-                        className="selected-outfit-item bottom-preview"
+                        alt={
+                          selectedItems.bottom.category === "shorts"
+                            ? "Şort"
+                            : "Pantolon"
+                        }
+                        className={
+                          selectedItems.bottom.category === "shorts"
+                            ? "selected-outfit-item shorts-preview"
+                            : "selected-outfit-item bottom-preview"
+                        }
                       />
                     )}
 
@@ -844,7 +867,7 @@ function Home() {
 
                 {renderTodayOutfitPiece(todayOutfit.footwear, "footwear")}
 
-                {renderTodayOutfitPiece(todayOutfit.accessory, "accessory")}
+                {renderTodayAccessories()}
               </div>
             </div>
 

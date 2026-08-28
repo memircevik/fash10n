@@ -62,9 +62,16 @@ function Wardrobe() {
     { key: "accessory", label: "Aksesuarlar" },
   ];
 
-  useEffect(() => {
-    setActiveCategory("all");
+  const filteredItems =
+    activeCategory === "all"
+      ? clothingItems
+      : activeCategory === "bottom"
+        ? clothingItems.filter(
+            (item) => item.category === "pants" || item.category === "shorts",
+          )
+        : clothingItems.filter((item) => item.category === activeCategory);
 
+  useEffect(() => {
     getClothingItems()
       .then((data) => {
         console.log("WARDROBE DATA:", data);
@@ -83,11 +90,6 @@ function Wardrobe() {
         setClothingItems([]);
       });
   }, []);
-
-  const filteredItems =
-    activeCategory === "all"
-      ? clothingItems
-      : clothingItems.filter((item) => item.category === activeCategory);
 
   const handleRemoveClothing = async (id) => {
     const confirmed = window.confirm(
@@ -165,7 +167,11 @@ function Wardrobe() {
       return topIcon;
     }
 
-    if (value === "bottom") {
+    if (value === "pants") {
+      return bottomIcon;
+    }
+
+    if (value === "shorts") {
       return bottomIcon;
     }
 
@@ -467,7 +473,8 @@ function Wardrobe() {
                     onChange={(event) => setCategory(event.target.value)}
                   >
                     <option value="top">Üst Giyim</option>
-                    <option value="bottom">Alt Giyim</option>
+                    <option value="pants">Pantolon</option>
+                    <option value="shorts">Şort</option>
                     <option value="outerwear">Dış Giyim</option>
                     <option value="footwear">Ayakkabı</option>
                     <option value="accessory">Aksesuar</option>

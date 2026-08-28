@@ -6,6 +6,7 @@ from io import BytesIO
 
 from PIL import Image
 
+from django.core.files.base import ContentFile
 from django.http import HttpResponse
 
 from rest_framework.views import APIView
@@ -30,7 +31,10 @@ class RemoveBackgroundView(APIView):
 
         if not image:
             return Response(
-                {"detail": "Fotoğraf bulunamadı."},
+                {
+                    "detail":
+                        "Fotoğraf bulunamadı."
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -58,7 +62,10 @@ class RemoveBackgroundView(APIView):
             )
 
             return Response(
-                {"detail": "Arka plan silinemedi."},
+                {
+                    "detail":
+                        "Arka plan silinemedi."
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -82,30 +89,419 @@ class ClothingItemView(APIView):
             serializer.data
         )
 
+    def get_content_bbox(self, image):
+        """
+        Görseldeki gerçek kıyafet alanını bulur.
+
+        Öncelik alpha kanalındadır.
+        Background removal yapılmış PNG'lerde
+        gerçek kıyafet sınırlarını tespit eder.
+
+        Alpha kullanılamıyorsa beyaz olmayan
+        pikseller üzerinden fallback yapılır.
+        """
+
+        image = image.convert(
+            "RGBA"
+        )
+
+        alpha = image.getchannel(
+            "A"
+        )
+
+        bbox = alpha.getbbox()
+
+        if bbox is not None:
+            return bbox
+
+        rgb = image.convert(
+            "RGB"
+        )
+
+        pixels = rgb.load()
+
+        width, height = rgb.size
+
+        min_x = width
+        min_y = height
+
+        max_x = -1
+        max_y = -1
+
+        for y in range(height):
+            for x in range(width):
+                r, g, b = pixels[x, y]
+
+                if (
+                    r < 245
+                    or g < 245
+                    or b < 245
+                ):
+                    min_x = min(
+                        min_x,
+                        x
+                    )
+
+                    min_y = min(
+                        min_y,
+                        y
+                    )
+
+                    max_x = max(
+                        max_x,
+                        x
+                    )
+
+                    max_y = max(
+                        max_y,
+                        y
+                    )
+
+        if max_x == -1:
+            return None
+
+        return (
+            min_x,
+            min_y,
+            max_x + 1,
+            max_y + 1
+        )
+
+    def get_category_slot(
+        self,
+        category
+    ):
+        """
+        UI'da normalize edilecek kategoriler
+        için sabit render slotları.
+
+        Footwear ve accessory burada yoktur;
+        onlar eski sistemdeki gibi doğrudan
+        kaydedilir.
+        """
+
+        slots = {
+            "top": {
+                "width": 500,
+                "height": 500,
+            },
+
+            "pants": {
+                "width": 500,
+                "height": 650,
+            },
+
+            "shorts": {
+                "width": 500,
+                "height": 380,
+            },
+
+            "outerwear": {
+                "width": 520,
+                "height": 560,
+            },
+        }
+
+        return slots.get(
+            category,
+            {
+                "width": 400,
+                "height": 400,
+            }
+        )
+
+    def prepare_clothing_image(
+        self,
+        image_file,
+        category
+    ):
+        """
+        Top, pants, shorts ve outerwear
+        görsellerini sabit kategori slotuna
+        göre hazırlar.
+
+        Footwear ve accessory bu fonksiyona
+        gönderilmez.
+
+        Aspect ratio korunur.
+        Küçük görseller büyütülebilir.
+        Büyük görseller küçültülebilir.
+        """
+
+        image_file.seek(
+            0
+        )
+
+        image = Image.open(
+            image_file
+        ).convert(
+            "RGBA"
+        )
+
+        bbox = self.get_content_bbox(
+            image
+        )
+
+        if bbox is None:
+            raise ValueError(
+                "Görselde kıyafet alanı bulunamadı."
+            )
+
+        left, top, right, bottom = bbox
+
+        cropped = image.crop(
+            (
+                left,
+                top,
+                right,
+                bottom
+            )
+        )
+
+        content_width = cropped.width
+        content_height = cropped.height
+
+        if (
+            content_width <= 0
+            or content_height <= 0
+        ):
+            raise ValueError(
+                "Kıyafet görselinin boyutu geçersiz."
+            )
+
+        slot = self.get_category_slot(
+            category
+        )
+
+        slot_width = slot["width"]
+        slot_height = slot["height"]
+
+        width_scale = (
+            slot_width /
+            content_width
+        )
+
+        height_scale = (
+            slot_height /
+            content_height
+        )
+
+        scale = min(
+            width_scale,
+            height_scale
+        )
+
+        if scale <= 0:
+            raise ValueError(
+                "Geçersiz ölçek hesaplandı."
+            )
+
+        new_width = max(
+            1,
+            round(
+                content_width *
+                scale
+            )
+        )
+
+        new_height = max(
+            1,
+            round(
+                content_height *
+                scale
+            )
+        )
+
+        resized = cropped.resize(
+            (
+                new_width,
+                new_height
+            ),
+            Image.Resampling.LANCZOS
+        )
+
+        target_size = 800
+
+        canvas = Image.new(
+            "RGBA",
+            (
+                target_size,
+                target_size
+            ),
+            (
+                0,
+                0,
+                0,
+                0
+            )
+        )
+
+        x = (
+            target_size -
+            new_width
+        ) // 2
+
+        y = (
+            target_size -
+            new_height
+        ) // 2
+
+        canvas.alpha_composite(
+            resized,
+            (
+                x,
+                y
+            )
+        )
+
+        output = BytesIO()
+
+        canvas.save(
+            output,
+            format="PNG",
+            optimize=True
+        )
+
+        output.seek(
+            0
+        )
+
+        original_name = (
+            getattr(
+                image_file,
+                "name",
+                "clothing.png"
+            )
+            or "clothing.png"
+        )
+
+        base_name = (
+            original_name.rsplit(
+                ".",
+                1
+            )[0]
+        )
+
+        prepared_name = (
+            base_name +
+            "_prepared.png"
+        )
+
+        print(
+            "IMAGE SLOT:",
+            {
+                "category":
+                    category,
+
+                "original_width":
+                    content_width,
+
+                "original_height":
+                    content_height,
+
+                "slot_width":
+                    slot_width,
+
+                "slot_height":
+                    slot_height,
+
+                "new_width":
+                    new_width,
+
+                "new_height":
+                    new_height,
+
+                "scale":
+                    round(
+                        scale,
+                        4
+                    ),
+            }
+        )
+
+        return ContentFile(
+            output.getvalue(),
+            name=prepared_name
+        )
+
     def post(self, request):
         serializer = ClothingItemSerializer(
             data=request.data
         )
 
-        if serializer.is_valid():
-            serializer.save(
-                user=request.user
+        if not serializer.is_valid():
+            print(
+                "CLOTHING SERIALIZER ERROR:",
+                serializer.errors
             )
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        image = request.FILES.get(
+            "image"
+        )
+
+        category = request.data.get(
+            "category"
+        )
+
+        if not image:
+            return Response(
+                {
+                    "detail":
+                        "Fotoğraf bulunamadı."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Footwear ve accessory eski sistemdeki gibi
+            # doğrudan kaydedilir.
+            if category in {
+                "footwear",
+                "accessory",
+            }:
+                serializer.save(
+                    user=request.user,
+                    image=image
+                )
+
+            # Top, pants, shorts ve outerwear
+            # yeni sabit UI slot sisteminden geçer.
+            else:
+                prepared_image = (
+                    self.prepare_clothing_image(
+                        image,
+                        category
+                    )
+                )
+
+                serializer.save(
+                    user=request.user,
+                    image=prepared_image
+                )
 
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED
             )
 
-        print(
-            "CLOTHING SERIALIZER ERROR:",
-            serializer.errors
-        )
+        except Exception as error:
+            print(
+                "IMAGE PREPARATION ERROR:",
+                error
+            )
 
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+            return Response(
+                {
+                    "detail":
+                        "Kıyafet görseli hazırlanamadı."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def delete(self, request, pk):
         try:
@@ -116,14 +512,19 @@ class ClothingItemView(APIView):
 
         except ClothingItem.DoesNotExist:
             return Response(
-                {"detail": "Kıyafet bulunamadı."},
+                {
+                    "detail":
+                        "Kıyafet bulunamadı."
+                },
                 status=status.HTTP_404_NOT_FOUND
             )
 
         clothing_item.is_active = False
 
         clothing_item.save(
-            update_fields=["is_active"]
+            update_fields=[
+                "is_active"
+            ]
         )
 
         return Response(
@@ -154,7 +555,10 @@ class OutfitView(APIView):
         )
 
     def post(self, request):
-        name = request.data.get("name")
+        name = request.data.get(
+            "name"
+        )
+
         item_ids = request.data.get(
             "items",
             []
@@ -184,7 +588,10 @@ class OutfitView(APIView):
             is_active=True
         )
 
-        if clothing_items.count() != len(item_ids):
+        if (
+            clothing_items.count()
+            != len(item_ids)
+        ):
             return Response(
                 {
                     "detail":
@@ -209,7 +616,12 @@ class OutfitView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if "bottom" not in categories:
+        has_bottom = (
+            "pants" in categories
+            or "shorts" in categories
+        )
+
+        if not has_bottom:
             return Response(
                 {
                     "detail":
@@ -223,6 +635,19 @@ class OutfitView(APIView):
                 {
                     "detail":
                         "Ayakkabı seçmelisin."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if (
+            "pants" in categories
+            and
+            "shorts" in categories
+        ):
+            return Response(
+                {
+                    "detail":
+                        "Aynı kombin içinde hem pantolon hem şort kullanamazsın."
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -261,7 +686,10 @@ class OutfitView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        name = request.data.get("name")
+        name = request.data.get(
+            "name"
+        )
+
         item_ids = request.data.get(
             "items",
             []
@@ -291,7 +719,10 @@ class OutfitView(APIView):
             is_active=True
         )
 
-        if clothing_items.count() != len(item_ids):
+        if (
+            clothing_items.count()
+            != len(item_ids)
+        ):
             return Response(
                 {
                     "detail":
@@ -316,7 +747,12 @@ class OutfitView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if "bottom" not in categories:
+        has_bottom = (
+            "pants" in categories
+            or "shorts" in categories
+        )
+
+        if not has_bottom:
             return Response(
                 {
                     "detail":
@@ -334,10 +770,25 @@ class OutfitView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if (
+            "pants" in categories
+            and
+            "shorts" in categories
+        ):
+            return Response(
+                {
+                    "detail":
+                        "Aynı kombin içinde hem pantolon hem şort kullanamazsın."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         outfit.name = name
 
         outfit.save(
-            update_fields=["name"]
+            update_fields=[
+                "name"
+            ]
         )
 
         outfit.items.set(
@@ -380,10 +831,15 @@ class AnalyzeClothingView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def get_main_color(self, image_bytes):
+    def get_main_color(
+        self,
+        image_bytes
+    ):
         image = Image.open(
             BytesIO(image_bytes)
-        ).convert("RGBA")
+        ).convert(
+            "RGBA"
+        )
 
         pixels = []
 
@@ -391,7 +847,9 @@ class AnalyzeClothingView(APIView):
             if a < 30:
                 continue
 
-            brightness = (r + g + b) / 3
+            brightness = (
+                r + g + b
+            ) / 3
 
             if brightness > 245:
                 continue
@@ -405,9 +863,18 @@ class AnalyzeClothingView(APIView):
 
         sample_limit = 20000
 
-        if len(pixels) > sample_limit:
-            step = len(pixels) // sample_limit
-            pixels = pixels[::step]
+        if (
+            len(pixels)
+            > sample_limit
+        ):
+            step = (
+                len(pixels)
+                // sample_limit
+            )
+
+            pixels = (
+                pixels[::step]
+            )
 
         red = (
             sum(
@@ -433,14 +900,19 @@ class AnalyzeClothingView(APIView):
             / len(pixels)
         )
 
-        return "#{:02X}{:02X}{:02X}".format(
-            round(red),
-            round(green),
-            round(blue)
+        return (
+            "#{:02X}{:02X}{:02X}"
+            .format(
+                round(red),
+                round(green),
+                round(blue)
+            )
         )
 
     def post(self, request):
-        image = request.FILES.get("image")
+        image = request.FILES.get(
+            "image"
+        )
 
         if not image:
             return Response(
@@ -454,9 +926,13 @@ class AnalyzeClothingView(APIView):
         try:
             image_bytes = image.read()
 
-            image_base64 = base64.b64encode(
-                image_bytes
-            ).decode("utf-8")
+            image_base64 = (
+                base64.b64encode(
+                    image_bytes
+                ).decode(
+                    "utf-8"
+                )
+            )
 
             schema = {
                 "type": "object",
@@ -465,12 +941,14 @@ class AnalyzeClothingView(APIView):
                         "type": "string",
                         "enum": [
                             "top",
-                            "bottom",
+                            "pants",
+                            "shorts",
                             "outerwear",
                             "footwear",
                             "accessory"
                         ]
                     },
+
                     "season": {
                         "type": "array",
                         "items": {
@@ -487,6 +965,7 @@ class AnalyzeClothingView(APIView):
                         "uniqueItems": True
                     }
                 },
+
                 "required": [
                     "category",
                     "season"
@@ -501,10 +980,31 @@ Return ONLY JSON.
 category must be exactly one of:
 
 top
-bottom
+pants
+shorts
 outerwear
 footwear
 accessory
+
+pants:
+Long pants, jeans, dress pants, chinos, joggers, etc.
+
+shorts:
+Shorts; short bottoms that leave a significant portion of the leg exposed.
+
+IMPORTANT:
+If the image clearly shows shorts, return exactly "shorts".
+If the image clearly shows long pants, return exactly "pants".
+Never return "bottom".
+There is no category called "bottom".
+
+Use the following visual distinction carefully:
+
+pants:
+The garment extends substantially down the legs.
+
+shorts:
+The garment ends above the knees or around the upper/mid thigh area and leaves a significant part of the legs exposed.
 
 season must be an array.
 
@@ -578,47 +1078,75 @@ Return only the JSON object.
 """
 
             payload = {
-                "model": "gemma3:4b",
+                "model":
+                    "gemma3:4b",
+
                 "messages": [
                     {
-                        "role": "user",
-                        "content": prompt,
+                        "role":
+                            "user",
+
+                        "content":
+                            prompt,
+
                         "images": [
                             image_base64
                         ]
                     }
                 ],
-                "format": schema,
-                "stream": False,
+
+                "format":
+                    schema,
+
+                "stream":
+                    False,
+
                 "options": {
-                    "temperature": 0
+                    "temperature":
+                        0
                 }
             }
 
-            ollama_request = urllib.request.Request(
-                "http://127.0.0.1:11434/api/chat",
-                data=json.dumps(
-                    payload
-                ).encode("utf-8"),
-                headers={
-                    "Content-Type":
-                        "application/json"
-                },
-                method="POST"
+            ollama_request = (
+                urllib.request.Request(
+                    "http://127.0.0.1:11434/api/chat",
+
+                    data=json.dumps(
+                        payload
+                    ).encode(
+                        "utf-8"
+                    ),
+
+                    headers={
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    method="POST"
+                )
             )
 
             with urllib.request.urlopen(
                 ollama_request,
                 timeout=180
             ) as response:
+
                 response_data = json.loads(
-                    response.read().decode("utf-8")
+                    response.read().decode(
+                        "utf-8"
+                    )
                 )
 
             content = (
                 response_data
-                .get("message", {})
-                .get("content", "")
+                .get(
+                    "message",
+                    {}
+                )
+                .get(
+                    "content",
+                    ""
+                )
             )
 
             if not content:
@@ -645,7 +1173,8 @@ Return only the JSON object.
 
             allowed_categories = {
                 "top",
-                "bottom",
+                "pants",
+                "shorts",
                 "outerwear",
                 "footwear",
                 "accessory"
@@ -658,7 +1187,10 @@ Return only the JSON object.
                 "winter"
             }
 
-            if category not in allowed_categories:
+            if (
+                category
+                not in allowed_categories
+            ):
                 raise ValueError(
                     "Geçersiz kategori."
                 )
@@ -682,8 +1214,10 @@ Return only the JSON object.
                     "Geçersiz mevsim."
                 )
 
-            color = self.get_main_color(
-                image_bytes
+            color = (
+                self.get_main_color(
+                    image_bytes
+                )
             )
 
             print(
@@ -693,9 +1227,14 @@ Return only the JSON object.
 
             return Response(
                 {
-                    "category": category,
-                    "color": color,
-                    "season": season
+                    "category":
+                        category,
+
+                    "color":
+                        color,
+
+                    "season":
+                        season
                 },
                 status=status.HTTP_200_OK
             )

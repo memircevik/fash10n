@@ -93,29 +93,34 @@
   object-fit: contain;
 }
 
+/*
+  Normalize edilmiş görseller artık ortak
+  bir canvas üzerinden geliyor.
+  Bu yüzden her kıyafeti ayrı ayrı
+  genişlik/konum açısından düzeltmeye
+  mümkün olduğunca gerek kalmıyor.
+*/
+
 .clothing-item-top,
+.clothing-item-pants,
+.clothing-item-shorts,
 .clothing-item-outerwear {
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.clothing-item-bottom {
-  width: 85%;
-  height: 85%;
-  object-fit: contain;
+  display: block;
 }
 
 .clothing-item-footwear {
-  width: 72%;
-  height: 72%;
-  object-fit: contain;
+  width: 100px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
 }
 
 .clothing-item-accessory {
-  width: 55%;
-  height: 55%;
-  object-fit: contain;
+  width: 110px;
+  height: 120px;
 }
 
 .clothing-meta {
@@ -519,46 +524,68 @@
 }
 
 .home-outfit-top {
-  width: 145px;
-  height: 190px;
-  top: 62px;
+  position: absolute;
+  width: 250px;
+  height: 240px;
+  top: -5px;
   left: 50%;
   transform: translateX(-50%);
+  object-fit: contain;
   z-index: 4;
 }
 
 .home-outfit-outerwear {
-  width: 120px;
-  height: 120px;
-  top: 37px;
-  left: calc(50% - 90px);
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: 22px;
+  left: calc(50% - 110px);
   transform: translateX(-50%);
+  object-fit: contain;
   z-index: 3;
 }
 
-.home-outfit-bottom {
+.home-outfit-pants {
+  position: absolute;
   width: 250px;
-  height: 200px;
-  top: 210px;
+  height: 240px;
+  top: 165px;
   left: 50%;
   transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 2;
+}
+
+.home-outfit-shorts {
+  position: absolute;
+  width: 290px;
+  height: 300px;
+  top: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
   z-index: 2;
 }
 
 .home-outfit-footwear {
-  width: 75px;
-  height: 75px;
-  bottom: 17px;
+  position: absolute;
+  width: 100px;
+  height: 80px;
+  top: 380px;
   left: 50%;
   transform: translateX(-50%);
+  object-fit: contain;
   z-index: 5;
 }
 
 .home-outfit-accessory {
+  position: absolute;
   width: 80px;
   height: 80px;
-  top: 200px;
-  right: 20px;
+  top: 48px;
+  left: calc(50% + 100px);
+  transform: translateX(-50%);
+  object-fit: contain;
   z-index: 6;
 }
 
@@ -588,26 +615,20 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   z-index: 1000;
 }
 
 .upload-modal {
   width: 760px;
   min-height: 460px;
-
   background: #ffffff;
-
   display: grid;
   grid-template-columns: 1fr 1fr;
-
   gap: 40px;
   padding: 35px;
-
   box-sizing: border-box;
   border-radius: 8px;
 }
@@ -615,14 +636,11 @@
 .upload-preview {
   width: 100%;
   height: 390px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #f2f2f2;
   overflow: hidden;
-
   border-radius: 8px;
 }
 
@@ -714,9 +732,7 @@
   min-height: calc(100vh - 80px);
   box-sizing: border-box;
   background: #ffffff;
-
   padding: 70px 24px 70px;
-
   display: flex;
   flex-direction: column;
 }
@@ -735,20 +751,14 @@
   color: #111111;
 }
 
-/* Kaydedilmiş kombinlerin grid'i */
-
 .outfits-grid {
   width: 100%;
   max-width: 1030px;
   margin: 0 auto;
-
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-
   gap: 32px;
 }
-
-/* Tek kombin kartı */
 
 .outfit-card {
   width: 100%;
@@ -760,23 +770,17 @@
 .outfit-image {
   width: 100%;
   height: 360px;
-
   background: #f4f4f4;
-
   border-radius: 10px;
   overflow: hidden;
-
   position: relative;
 }
 
 .saved-outfit-preview {
   width: 100%;
   height: 100%;
-
   position: relative;
-
   background: #f4f4f4;
-
   overflow: hidden;
 }
 
@@ -787,51 +791,56 @@
 }
 
 .saved-outfit-top {
-  width: 110px;
-  height: 160px;
-
+  width: 180px;
+  height: 200px;
   top: 12px;
   left: 50%;
-
   transform: translateX(-50%);
+  z-index: 4;
 }
 
 .saved-outfit-outerwear {
-  width: 120px;
-  height: 120px;
-
-  top: 37px;
-  left: calc(50% - 90px);
-
+  width: 150px;
+  height: 180px;
+  top: 20px;
+  left: calc(50% - 100px);
   transform: translateX(-50%);
+  z-index: 3;
 }
 
-.saved-outfit-bottom {
-  width: 230px;
-  height: 170px;
-
-  top: 130px;
+.saved-outfit-pants {
+  width: 200px;
+  height: 150px;
+  top: 150px;
   left: 50%;
-
   transform: translateX(-50%);
+  z-index: 2;
+}
+
+.saved-outfit-shorts {
+  width: 210px;
+  height: 230px;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
 }
 
 .saved-outfit-footwear {
-  width: 75px;
+  width: 55px;
   height: 75px;
-
-  bottom: 17px;
+  bottom: 14px;
   left: 50%;
-
   transform: translateX(-50%);
+  z-index: 5;
 }
 
 .saved-outfit-accessory {
   width: 50px;
   height: 50px;
-
-  top: 45px;
-  right: 60px;
+  top: 65px;
+  right: 55px;
+  z-index: 6;
 }
 
 /* =========================
@@ -840,29 +849,19 @@
 
 .delete-outfit-button {
   position: absolute;
-
   top: 10px;
   right: 10px;
-
   width: 28px;
   height: 28px;
-
   padding: 0;
-
   border: none;
-
   background: rgba(255, 255, 255, 0.92);
-
   border-radius: 50%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   cursor: pointer;
-
   z-index: 20;
-
   transition:
     transform 0.15s ease,
     background 0.15s ease;
@@ -913,65 +912,40 @@
 .outfit-detail-overlay {
   position: fixed;
   inset: 0;
-
   background: rgba(0, 0, 0, 0.45);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 30px;
-
   box-sizing: border-box;
-
   z-index: 2000;
 }
 
 .outfit-detail-modal {
   width: min(720px, 100%);
-
   max-height: 90vh;
-
   overflow-y: auto;
-
   background: #ffffff;
-
   border-radius: 12px;
-
   padding: 30px;
-
   box-sizing: border-box;
-
   position: relative;
-
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* Kapatma */
-
 .outfit-detail-close {
   position: absolute;
-
   top: 12px;
   right: 16px;
-
   width: 34px;
   height: 34px;
-
   border: none;
-
   background: transparent;
-
   padding: 0;
-
   font-size: 28px;
-
   line-height: 1;
-
   color: #111111;
-
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -981,196 +955,134 @@
   opacity: 0.55;
 }
 
-/* Başlık */
-
 .outfit-detail-header {
   text-align: center;
-
   padding: 0 40px;
-
   margin-bottom: 20px;
 }
 
 .outfit-detail-header h2 {
   margin: 0 0 6px;
-
   font-size: 22px;
-
   font-weight: 700;
-
   color: #111111;
 }
 
 .outfit-detail-header p {
   margin: 0;
-
   font-size: 12px;
-
   color: #777777;
 }
 
-/* Büyük kombin alanı */
-
 .outfit-detail-image {
   width: 100%;
-
   height: 500px;
-
   background: #f4f4f4;
-
   border-radius: 10px;
-
   overflow: hidden;
-
   position: relative;
 }
 
 .saved-outfit-detail-preview {
   width: 100%;
   height: 100%;
-
   position: relative;
-
   overflow: hidden;
 }
 
-/* Popup - üst */
-
 .saved-outfit-detail-top {
   position: absolute;
-
-  width: 170px;
-  height: 200px;
-
-  top: 30px;
+  width: 250px;
+  height: 240px;
+  top: -5px;
   left: 50%;
-
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 4;
 }
 
-/* Popup - dış giyim */
-
 .saved-outfit-detail-outerwear {
   position: absolute;
-
   width: 180px;
   height: 180px;
-
-  top: 25px;
-  left: calc(50% - 115px);
-
+  top: 22px;
+  left: calc(50% - 155px);
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 3;
 }
 
-/* Popup - alt */
-
-.saved-outfit-detail-bottom {
+.saved-outfit-detail-pants {
   position: absolute;
-
-  width: 280px;
-  height: 220px;
-
-  top: 175px;
+  width: 250px;
+  height: 240px;
+  top: 165px;
   left: 50%;
-
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 2;
 }
 
-/* Popup - ayakkabı */
+.saved-outfit-detail-shorts {
+  position: absolute;
+  width: 290px;
+  height: 300px;
+  top: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 2;
+}
 
 .saved-outfit-detail-footwear {
   position: absolute;
-
-  width: 120px;
-  height: 100px;
-
-  bottom: 25px;
+  width: 100px;
+  height: 80px;
+  top: 380px;
   left: 50%;
-
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 5;
 }
 
-/* Popup - aksesuar */
-
 .saved-outfit-detail-accessory {
   position: absolute;
-
-  width: 75px;
-  height: 75px;
-
-  top: 75px;
-  right: 100px;
-
+  width: 80px;
+  height: 80px;
+  top: 48px;
+  left: calc(50% + 100px);
+  transform: translateX(-50%);
   object-fit: contain;
-
   z-index: 6;
 }
 
-/* Popup içindeki parça listesi */
-
 .outfit-detail-items {
   width: 100%;
-
   display: flex;
-
   justify-content: center;
-
   flex-wrap: wrap;
-
   gap: 8px;
-
   margin-top: 18px;
 }
 
 .outfit-detail-item {
   padding: 7px 12px;
-
   background: #f1f1f1;
-
   border-radius: 20px;
-
   font-size: 12px;
-
   color: #555555;
 }
 
-/* Popup kapat */
-
 .outfit-detail-done {
   display: block;
-
   margin: 24px auto 0;
-
   border: none;
-
   background: #111111;
-
   color: #ffffff;
-
   padding: 9px 20px;
-
   font-family: inherit;
-
   font-size: 13px;
-
   cursor: pointer;
-
   border-radius: 4px;
 }
 
@@ -1186,11 +1098,9 @@
   width: 100%;
   max-width: 1030px;
   margin: 0 auto;
-
   display: flex;
   align-items: flex-start;
   justify-content: center;
-
   gap: 44px;
   position: relative;
 }
@@ -1198,19 +1108,14 @@
 .outfit-arrow {
   position: absolute;
   top: 180px;
-
   width: 36px;
   height: 36px;
-
   border: none;
   background: transparent;
-
   font-size: 42px;
   line-height: 1;
   color: #111111;
-
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1239,32 +1144,23 @@
 .outfit-modal-overlay {
   position: fixed;
   inset: 0;
-
   background: rgba(0, 0, 0, 0.45);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 30px;
   box-sizing: border-box;
-
   z-index: 1000;
 }
 
 .outfit-modal {
   width: min(1180px, 100%);
   max-height: 90vh;
-
   overflow-y: auto;
-
   background: #ffffff;
-
   padding: 28px 40px 30px;
-
   box-sizing: border-box;
   position: relative;
-
   border-radius: 12px;
 }
 
@@ -1272,13 +1168,10 @@
   position: absolute;
   top: 14px;
   right: 18px;
-
   border: none;
   background: transparent;
-
   font-size: 28px;
   line-height: 1;
-
   color: #111111;
   cursor: pointer;
 }
@@ -1296,46 +1189,32 @@
 
 .outfit-carousel {
   min-width: 0;
-
   display: grid;
-
   grid-template-columns: 24px minmax(0, 1fr) 24px;
   grid-template-rows: auto 1fr;
-
   align-items: center;
-
   row-gap: 10px;
 }
 
 .outfit-carousel h3 {
   grid-column: 1 / -1;
-
   margin: 0;
-
   text-align: center;
-
   font-size: 13px;
   font-weight: 600;
-
   color: #111111;
 }
 
 .carousel-arrow {
   width: 24px;
   height: 32px;
-
   border: none;
   background: transparent;
-
   padding: 0;
-
   font-size: 28px;
   line-height: 1;
-
   color: #111111;
-
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1353,13 +1232,9 @@
 .carousel-item {
   width: 100%;
   height: 230px;
-
   overflow: hidden;
-
   background: #f4f4f4;
-
   border-radius: 8px;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1368,14 +1243,11 @@
 .carousel-placeholder {
   width: 100%;
   height: 100%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   color: #999999;
   font-size: 12px;
-
   text-align: center;
 }
 
@@ -1386,23 +1258,35 @@
   object-fit: contain;
 }
 
+/*
+  Normalize edilmiş 800x800 görseller
+  nedeniyle tüm kategoriler aynı canvası
+  kullanabilir.
+*/
+
 .carousel-clothing-top,
 .carousel-clothing-bottom,
-.carousel-clothing-outerwear {
-  width: 100%;
-  height: 100%;
+.carousel-clothing-outerwear,
+.carousel-clothing-footwear,
+.carousel-clothing-accessory {
+  object-fit: contain;
 }
 
 .carousel-clothing-footwear {
   width: 72%;
   height: 72%;
-  object-fit: contain;
 }
 
 .carousel-clothing-accessory {
   width: 55%;
   height: 55%;
-  object-fit: contain;
+}
+
+.carousel-clothing-bottom {
+  width: 120%;
+  height: 180%;
+  top: 50%;
+  left: 50%;
 }
 
 /* =========================
@@ -1415,22 +1299,17 @@
 
 .outfit-preview h3 {
   margin: 0 0 10px;
-
   font-size: 15px;
   font-weight: 600;
-
   text-align: center;
-
   color: #111111;
 }
 
 .outfit-preview-area {
   width: 100%;
-  height: 430px;
-
+  height: 490px;
   background: #f4f4f4;
   border-radius: 8px;
-
   position: relative;
   overflow: hidden;
 }
@@ -1438,115 +1317,109 @@
 .outfit-preview-empty {
   position: absolute;
   inset: 0;
-
   margin: 0;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-size: 13px;
   color: #999999;
-
   text-align: center;
 }
 
 .selected-outfit-items {
   position: relative;
-
   width: 100%;
   height: 100%;
 }
 
 /* =========================
-   ÖNİZLEME PARÇALARI
+   ÜST GİYİM
 ========================= */
 
-.top-preview,
-.outerwear-preview,
-.footwear-preview {
-  position: absolute;
-
-  width: 170px;
-  height: 170px;
-
-  object-fit: contain;
-}
-
-.bottom-preview {
-  position: absolute;
-
-  width: 200px;
-  height: 200px;
-
-  object-fit: contain;
-}
-
-/* Dış giyim - üst giyimin solunda */
-
-.outerwear-preview {
-  top: 20px;
-  left: calc(50% - 155px);
-
-  transform: translateX(-50%);
-
-  z-index: 3;
-}
-
-/* Üst giyim - ortada */
-
 .top-preview {
-  top: 20px;
+  position: absolute;
+  width: 250px;
+  height: 240px;
+  top: -5px;
   left: 50%;
-
   transform: translateX(-50%);
-
+  object-fit: contain;
   z-index: 4;
 }
 
-/* Aksesuar - üst sırada sağda ve küçük */
+/* =========================
+   DIŞ GİYİM
+========================= */
 
-.accessory-preview {
+.outerwear-preview {
   position: absolute;
-
-  width: 80px;
-  height: 80px;
-
-  top: 48px;
-  left: calc(50% + 100px);
-
+  width: 180px;
+  height: 180px;
+  top: 22px;
+  left: calc(50% - 155px);
   transform: translateX(-50%);
-
   object-fit: contain;
-
-  z-index: 6;
+  z-index: 3;
 }
 
-/* Alt giyim - ikinci sıra */
+/* =========================
+   PANTOLON
+========================= */
 
 .bottom-preview {
-  top: 155px;
+  position: absolute;
+  width: 250px;
+  height: 240px;
+  top: 165px;
   left: 50%;
-
   transform: translateX(-50%);
-
+  object-fit: contain;
   z-index: 2;
 }
 
-/* Ayakkabı - en alt sıra */
+/* =========================
+   ŞORT
+========================= */
+
+.shorts-preview {
+  position: absolute;
+  width: 290px;
+  height: 300px;
+  top: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 2;
+}
+
+/* =========================
+   AKSESUAR
+========================= */
+
+.accessory-preview {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  top: 48px;
+  left: calc(50% + 100px);
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 6;
+}
+
+/* =========================
+   AYAKKABI
+   Eski davranış korunuyor.
+========================= */
 
 .footwear-preview {
-  top: 315px;
-  left: 50%;
-
-  width: 100px;
-  height: 90px;
-
-  object-fit: contain;
-
-  transform: translateX(-50%);
-
   position: absolute;
+  width: 100px;
+  height: 80px;
+  top: 380px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
   z-index: 5;
 }
 
@@ -1556,10 +1429,8 @@
 
 .outfit-name-section {
   margin-top: 24px;
-
   display: flex;
   flex-direction: column;
-
   gap: 8px;
 }
 
@@ -1571,16 +1442,11 @@
 .outfit-name-section input {
   width: 100%;
   height: 38px;
-
   box-sizing: border-box;
-
   border: 1px solid #cccccc;
-
   padding: 0 12px;
-
   font-family: inherit;
   font-size: 13px;
-
   outline: none;
 }
 
@@ -1595,19 +1461,14 @@
 .outfit-modal-actions {
   display: flex;
   justify-content: flex-end;
-
   gap: 10px;
-
   margin-top: 25px;
 }
 
 .outfit-modal-actions button {
   border: none;
-
   padding: 9px 18px;
-
   cursor: pointer;
-
   font-family: inherit;
   font-size: 13px;
 }
@@ -1634,11 +1495,9 @@
 .background-removal-loading {
   width: 100%;
   height: 100%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-size: 13px;
   color: #777777;
 }
@@ -1646,52 +1505,37 @@
 .background-removal-overlay {
   position: fixed;
   inset: 0;
-
   background: rgba(255, 255, 255, 0.72);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   z-index: 9999;
-
   cursor: wait;
 }
 
 .background-removal-loader {
   width: 260px;
-
   padding: 28px;
-
   background: #ffffff;
-
   border-radius: 12px;
-
   text-align: center;
-
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
 .background-removal-spinner {
   width: 30px;
   height: 30px;
-
   margin: 0 auto 16px;
-
   border: 3px solid #dddddd;
   border-top-color: #111111;
-
   border-radius: 50%;
-
   animation: backgroundRemovalSpin 0.8s linear infinite;
 }
 
 .background-removal-loader p {
   margin: 0 0 6px;
-
   font-size: 14px;
   font-weight: 600;
-
   color: #111111;
 }
 
@@ -1768,9 +1612,14 @@
     height: 155px;
   }
 
-  .saved-outfit-detail-bottom {
+  .saved-outfit-detail-pants {
     width: 240px;
     height: 200px;
+  }
+
+  .saved-outfit-detail-shorts {
+    width: 155px;
+    height: 150px;
   }
 }
 
@@ -1834,10 +1683,16 @@
     left: calc(50% - 85px);
   }
 
-  .saved-outfit-detail-bottom {
+  .saved-outfit-detail-pants {
     width: 210px;
     height: 180px;
     top: 145px;
+  }
+
+  .saved-outfit-detail-shorts {
+    width: 140px;
+    height: 135px;
+    top: 155px;
   }
 
   .saved-outfit-detail-footwear {
@@ -1884,18 +1739,15 @@
 .today-outfit-card {
   background: #f3eee8;
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   overflow: hidden;
 }
 
 .today-outfit-preview {
   width: 100%;
   height: 100%;
-
   position: relative;
   overflow: hidden;
 }
@@ -1909,17 +1761,12 @@
 
 .today-outfit-top {
   position: absolute;
-
-  width: 145px;
-  height: 175px;
-
-  top: 55px;
+  width: 250px;
+  height: 240px;
+  top: -5px;
   left: 50%;
-
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 4;
 }
 
@@ -1927,35 +1774,38 @@
 
 .today-outfit-outerwear {
   position: absolute;
-
-  width: 125px;
-  height: 150px;
-
-  top: 42px;
-  left: calc(50% - 85px);
-
+  width: 180px;
+  height: 180px;
+  top: 22px;
+  left: calc(50% - 110px);
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 3;
 }
 
-/* Alt */
+/* Pantolon */
 
 .today-outfit-bottom {
   position: absolute;
-
-  width: 220px;
-  height: 190px;
-
-  top: 195px;
+  width: 250px;
+  height: 240px;
+  top: 165px;
   left: 50%;
-
   transform: translateX(-50%);
-
   object-fit: contain;
+  z-index: 2;
+}
 
+/* Şort */
+
+.today-outfit-bottom-short {
+  position: absolute;
+  width: 290px;
+  height: 300px;
+  top: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
   z-index: 2;
 }
 
@@ -1963,17 +1813,12 @@
 
 .today-outfit-footwear {
   position: absolute;
-
-  width: 90px;
+  width: 100px;
   height: 80px;
-
-  bottom: 28px;
+  top: 380px;
   left: 50%;
-
   transform: translateX(-50%);
-
   object-fit: contain;
-
   z-index: 5;
 }
 
@@ -1981,15 +1826,12 @@
 
 .today-outfit-accessory {
   position: absolute;
-
-  width: 65px;
-  height: 65px;
-
-  top: 75px;
-  right: 48px;
-
+  width: 80px;
+  height: 80px;
+  top: 48px;
+  left: calc(50% + 100px);
+  transform: translateX(-50%);
   object-fit: contain;
-
   z-index: 6;
 }
 
@@ -1998,16 +1840,12 @@
 .today-outfit-empty {
   width: 100%;
   height: 100%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   text-align: center;
-
   font-size: 15px;
   font-weight: 600;
-
   color: #756d66;
 }
 
@@ -2017,128 +1855,131 @@
 
 .today-outfit-modal-overlay {
   position: fixed;
-
   inset: 0;
-
   background: rgba(0, 0, 0, 0.45);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 30px;
-
   box-sizing: border-box;
-
   z-index: 2500;
 }
 
 .today-outfit-modal {
   width: min(700px, 100%);
-
   background: #ffffff;
-
   border-radius: 12px;
-
   padding: 30px;
-
   box-sizing: border-box;
-
   position: relative;
-
   box-shadow: 0 14px 45px rgba(0, 0, 0, 0.16);
 }
 
 .today-outfit-modal-close {
   position: absolute;
-
   top: 12px;
   right: 16px;
-
   width: 34px;
   height: 34px;
-
   border: none;
-
   background: transparent;
-
   font-size: 28px;
-
   line-height: 1;
-
   color: #111111;
-
   cursor: pointer;
 }
 
 .today-outfit-modal-header {
   text-align: center;
-
   margin-bottom: 20px;
 }
 
 .today-outfit-modal-header h2 {
   margin: 0 0 6px;
-
   font-size: 22px;
   font-weight: 700;
-
   color: #111111;
 }
 
 .today-outfit-modal-header p {
   margin: 0;
-
   font-size: 12px;
-
   color: #777777;
 }
 
 .today-outfit-modal-preview {
   width: 100%;
   height: 500px;
-
   border-radius: 10px;
-
   background: #f4f1ed;
-
   overflow: hidden;
+  position: relative;
 }
 
 .today-outfit-modal-preview .today-outfit-top {
-  width: 170px;
-  height: 200px;
-
-  top: 45px;
+  position: absolute;
+  width: 250px;
+  height: 240px;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 4;
 }
 
 .today-outfit-modal-preview .today-outfit-outerwear {
-  width: 175px;
+  position: absolute;
+  width: 180px;
   height: 180px;
-
-  top: 30px;
+  top: 22px;
+  left: calc(50% - 155px);
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 3;
 }
 
 .today-outfit-modal-preview .today-outfit-bottom {
-  width: 280px;
-  height: 230px;
+  position: absolute;
+  width: 250px;
+  height: 240px;
+  top: 165px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 2;
+}
 
-  top: 180px;
+.today-outfit-modal-preview .today-outfit-bottom-short {
+  position: absolute;
+  width: 290px;
+  height: 300px;
+  top: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 2;
 }
 
 .today-outfit-modal-preview .today-outfit-footwear {
-  width: 115px;
-  height: 100px;
-
-  bottom: 25px;
+  position: absolute;
+  width: 100px;
+  height: 80px;
+  top: 380px;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 5;
 }
 
 .today-outfit-modal-preview .today-outfit-accessory {
-  width: 75px;
-  height: 75px;
-
-  top: 70px;
-  right: 90px;
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  top: 48px;
+  left: calc(50% + 100px);
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 6;
 }
 
 /* =========================
@@ -2147,26 +1988,18 @@
 
 .today-outfit-actions {
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   gap: 10px;
-
   margin-top: 22px;
 }
 
 .today-outfit-actions button {
   border: none;
-
   padding: 9px 20px;
-
   font-family: inherit;
-
   font-size: 13px;
-
   cursor: pointer;
-
   border-radius: 4px;
 }
 
@@ -2186,4 +2019,9 @@
 
 .today-outfit-close-button:hover {
   background: #dcdcdc;
+}
+
+.today-outfit-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
