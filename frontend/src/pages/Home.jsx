@@ -21,8 +21,12 @@ function Home() {
     bottom: null,
     outerwear: null,
     footwear: null,
-    accessory: null,
+    accessory: [],
   });
+
+  const [accessoryPage, setAccessoryPage] = useState(0);
+
+  const accessoryPageSize = 4;
 
   const [outfitName, setOutfitName] = useState("");
 
@@ -320,11 +324,130 @@ function Home() {
     });
   };
 
+  const toggleAccessory = (item) => {
+    setSelectedItems((current) => {
+      const alreadySelected = current.accessory.some(
+        (selected) => selected.id === item.id,
+      );
+
+      if (alreadySelected) {
+        return {
+          ...current,
+          accessory: current.accessory.filter(
+            (selected) => selected.id !== item.id,
+          ),
+        };
+      }
+
+      return {
+        ...current,
+        accessory: [...current.accessory, item],
+      };
+    });
+  };
+
+  const accessoryPageCount = Math.ceil(
+    categoryItems.accessory.length / accessoryPageSize,
+  );
+
+  const visibleAccessories = categoryItems.accessory.slice(
+    accessoryPage * accessoryPageSize,
+    accessoryPage * accessoryPageSize + accessoryPageSize,
+  );
+
   /* =========================
      CAROUSEL RENDER
   ========================= */
 
   const renderCarousel = (category, title) => {
+    if (category === "accessory") {
+      return (
+        <div className="outfit-carousel accessory-carousel">
+          <h3>{title}</h3>
+
+          <div className="accessory-selection">
+            <button
+              type="button"
+              className="accessory-carousel-arrow"
+              disabled={accessoryPage <= 0}
+              onClick={(event) => {
+                event.stopPropagation();
+
+                setAccessoryPage((current) => Math.max(current - 1, 0));
+              }}
+            >
+              ‹
+            </button>
+
+            <div className="accessory-selection-grid">
+              {visibleAccessories.length === 0 ? (
+                <div className="carousel-placeholder">
+                  Bu kategoride kıyafet yok.
+                </div>
+              ) : (
+                visibleAccessories.map((item) => {
+                  const isSelected = selectedItems.accessory.some(
+                    (selected) => selected.id === item.id,
+                  );
+
+                  return (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={
+                        "accessory-selection-item" +
+                        (isSelected ? " selected" : "")
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+
+                        toggleAccessory(item);
+                      }}
+                    >
+                      <img
+                        src={"http://127.0.0.1:8000" + item.image}
+                        alt="Aksesuar"
+                      />
+
+                      {isSelected && (
+                        <span className="accessory-selection-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="accessory-carousel-arrow"
+              disabled={accessoryPage >= accessoryPageCount - 1}
+              onClick={(event) => {
+                event.stopPropagation();
+
+                setAccessoryPage((current) =>
+                  Math.min(current + 1, accessoryPageCount - 1),
+                );
+              }}
+            >
+              ›
+            </button>
+          </div>
+
+          <div className="accessory-selection-count">
+            {selectedItems.accessory.length > 0
+              ? `${selectedItems.accessory.length} aksesuar seçildi`
+              : "Aksesuar seçebilirsin"}
+          </div>
+
+          {accessoryPageCount > 1 && (
+            <div className="accessory-page-indicator">
+              {accessoryPage + 1} / {accessoryPageCount}
+            </div>
+          )}
+        </div>
+      );
+    }
     const selectedItem = selectedItems[category];
 
     const items = categoryItems[category];
@@ -390,8 +513,10 @@ function Home() {
       bottom: null,
       outerwear: null,
       footwear: null,
-      accessory: null,
+      accessory: [],
     });
+
+    setAccessoryPage(0);
 
     setOutfitName("");
     setOutfitError("");
@@ -444,9 +569,13 @@ function Home() {
       return;
     }
 
-    const itemIds = Object.values(selectedItems)
-      .filter(Boolean)
-      .map((item) => item.id);
+    const itemIds = [
+      selectedItems.top?.id,
+      selectedItems.bottom?.id,
+      selectedItems.outerwear?.id,
+      selectedItems.footwear?.id,
+      ...selectedItems.accessory.map((item) => item.id),
+    ].filter(Boolean);
 
     try {
       setIsSavingOutfit(true);
@@ -464,7 +593,7 @@ function Home() {
         bottom: null,
         outerwear: null,
         footwear: null,
-        accessory: null,
+        accessory: [],
       });
 
       setOutfitName("");
@@ -481,6 +610,26 @@ function Home() {
   /* =========================
      SON EKLENEN KOMBİNE GİT
   ========================= */
+
+  const renderRecentOutfitItems = (items) => {
+    let accessoryIndex = 0;
+
+    return items?.map((item) => {
+      const accessoryClass =
+        item.category === "accessory"
+          ? ` home-outfit-accessory-${accessoryIndex++}`
+          : "";
+
+      return (
+        <img
+          key={item.id}
+          src={"http://127.0.0.1:8000" + item.image}
+          alt={item.category}
+          className={"home-outfit-" + item.category + accessoryClass}
+        />
+      );
+    });
+  };
 
   const openRecentOutfit = (event, outfit) => {
     event.stopPropagation();
@@ -628,14 +777,7 @@ function Home() {
                     }
                   >
                     <div className="home-outfit-preview">
-                      {recentOutfits[2].items?.map((item) => (
-                        <img
-                          key={item.id}
-                          src={"http://127.0.0.1:8000" + item.image}
-                          alt={item.category}
-                          className={"home-outfit-" + item.category}
-                        />
-                      ))}
+                      {renderRecentOutfitItems(recentOutfits[2].items)}
                     </div>
                   </div>
                 )}
@@ -648,14 +790,7 @@ function Home() {
                     }
                   >
                     <div className="home-outfit-preview">
-                      {recentOutfits[1].items?.map((item) => (
-                        <img
-                          key={item.id}
-                          src={"http://127.0.0.1:8000" + item.image}
-                          alt={item.category}
-                          className={"home-outfit-" + item.category}
-                        />
-                      ))}
+                      {renderRecentOutfitItems(recentOutfits[1].items)}
                     </div>
                   </div>
                 )}
@@ -668,14 +803,7 @@ function Home() {
                     }
                   >
                     <div className="home-outfit-preview">
-                      {recentOutfits[0].items?.map((item) => (
-                        <img
-                          key={item.id}
-                          src={"http://127.0.0.1:8000" + item.image}
-                          alt={item.category}
-                          className={"home-outfit-" + item.category}
-                        />
-                      ))}
+                      {renderRecentOutfitItems(recentOutfits[0].items)}
                     </div>
                   </div>
                 )}
@@ -724,7 +852,11 @@ function Home() {
               <h3>Kombin</h3>
 
               <div className="outfit-preview-area">
-                {Object.values(selectedItems).every((item) => item === null) ? (
+                {!selectedItems.top &&
+                !selectedItems.bottom &&
+                !selectedItems.outerwear &&
+                !selectedItems.footwear &&
+                selectedItems.accessory.length === 0 ? (
                   <p className="outfit-preview-empty">Henüz parça seçmedin.</p>
                 ) : (
                   <div className="selected-outfit-items">
@@ -775,16 +907,17 @@ function Home() {
                       />
                     )}
 
-                    {selectedItems.accessory && (
+                    {selectedItems.accessory.map((item, index) => (
                       <img
-                        src={
-                          "http://127.0.0.1:8000" +
-                          selectedItems.accessory.image
-                        }
+                        key={item.id}
+                        src={"http://127.0.0.1:8000" + item.image}
                         alt="Aksesuar"
-                        className="selected-outfit-item accessory-preview"
+                        className={
+                          "selected-outfit-item accessory-preview " +
+                          `accessory-preview-${index}`
+                        }
                       />
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
