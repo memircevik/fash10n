@@ -36,7 +36,13 @@ export async function getClothingItems() {
   return data;
 }
 
-export async function addClothingItems(image, category, season, color) {
+export async function addClothingItems(
+  image,
+  category,
+  season,
+  color,
+  description,
+) {
   let accessToken = localStorage.getItem("access_token");
 
   const formData = new FormData();
@@ -45,6 +51,7 @@ export async function addClothingItems(image, category, season, color) {
   formData.append("category", category);
   formData.append("season", season);
   formData.append("color", color);
+  formData.append("description", description);
 
   let response = await fetch(
     "http://127.0.0.1:8000/api/wardrobe/clothing-items/",
@@ -82,6 +89,7 @@ export async function addClothingItems(image, category, season, color) {
       data.season?.[0] ||
       data.category?.[0] ||
       data.color?.[0] ||
+      data.description?.[0] ||
       data.image?.[0] ||
       "Kıyafet eklenemedi.";
 

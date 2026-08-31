@@ -50,6 +50,7 @@ function Wardrobe() {
   const [category, setCategory] = useState("top");
   const [season, setSeason] = useState(["summer"]);
   const [color, setColor] = useState("#000000");
+  const [description, setDescription] = useState("");
 
   const [uploadError, setUploadError] = useState("");
 
@@ -201,6 +202,7 @@ function Wardrobe() {
     setCategory("top");
     setSeason(["summer"]);
     setColor("#000000");
+    setDescription("");
 
     setIsRemovingBackground(true);
 
@@ -227,6 +229,10 @@ function Wardrobe() {
 
       if (analysis.season) {
         setSeason(normalizeSeasons(analysis.season));
+      }
+
+      if (analysis.description) {
+        setDescription(analysis.description);
       }
 
       const preview = URL.createObjectURL(blob);
@@ -258,6 +264,10 @@ function Wardrobe() {
 
         if (analysis.season) {
           setSeason(normalizeSeasons(analysis.season));
+        }
+
+        if (analysis.description) {
+          setDescription(analysis.description);
         }
 
         setUploadError("");
@@ -309,7 +319,13 @@ function Wardrobe() {
     try {
       setUploadError("");
 
-      await addClothingItems(processedFile, category, season, color);
+      await addClothingItems(
+        processedFile,
+        category,
+        season,
+        color,
+        description,
+      );
 
       const updatedItems = await getClothingItems();
 
@@ -328,6 +344,7 @@ function Wardrobe() {
       setCategory("top");
       setSeason(["summer"]);
       setColor("#000000");
+      setDescription("");
     } catch (error) {
       console.error("Upload error:", error);
 
@@ -349,6 +366,7 @@ function Wardrobe() {
     setCategory("top");
     setSeason(["summer"]);
     setColor("#000000");
+    setDescription("");
   };
 
   return (

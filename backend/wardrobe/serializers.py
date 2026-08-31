@@ -97,6 +97,7 @@ class ClothingItemSerializer(serializers.ModelSerializer):
             "category",
             "season",
             "color",
+            "description",
             "image",
             "created_at",
             "updated_at",

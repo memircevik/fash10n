@@ -963,8 +963,13 @@ class AnalyzeClothingView(APIView):
                         "minItems": 1,
                         "maxItems": 4,
                         "uniqueItems": True
+                    },
+
+                    "description": {
+                        "type":"string"
                     }
                 },
+                    
 
                 "required": [
                     "category",
@@ -1065,6 +1070,38 @@ sandals:
 
 watch:
 ["spring", "summer", "fall", "winter"]
+
+description must be a concise but informative description of the clothing item.
+
+Describe what the item visibly is and the details that are useful for future outfit recommendations.
+
+Mention, when reasonably visible:
+- exact clothing type
+- sleeve or leg length
+- collar or neckline
+- hood if present
+- pockets if clearly visible
+- buttons, zipper, drawstrings, or other important construction details
+- pattern or texture
+- apparent material or fabric
+- fit or silhouette
+- overall style
+
+Do not guess details that cannot reasonably be inferred from the image.
+
+Do not include the color because color is stored separately.
+
+Write the description as one natural sentence or two short sentences.
+
+Examples:
+
+"Bordo, uzun kollu, 'awdoawdo' desenli, kapüşonlu sweatshirt; kalın kumaşlı ve rahat kesimli."
+
+"Bej, düz kesimli chino pantolon; orta ağırlıkta dokulu kumaş ve klasik cepli tasarım."
+
+"Siyah spor ayakkabı; düşük bilekli, bağcıklı ve kalın tabanlı."
+
+"Metal kadranlı analog saat; yuvarlak kasalı ve klasik tasarımlı."
 
 Do not return color.
 
@@ -1171,6 +1208,10 @@ Return only the JSON object.
                 "season"
             )
 
+            description = result.get(
+                "description"
+            )
+
             allowed_categories = {
                 "top",
                 "pants",
@@ -1214,6 +1255,14 @@ Return only the JSON object.
                     "Geçersiz mevsim."
                 )
 
+            if (
+                not isinstance(description, str)
+                or not description.strip()
+            ):
+                raise ValueError(
+                    "Geçersiz kıyafet açıklaması."
+                )
+
             color = (
                 self.get_main_color(
                     image_bytes
@@ -1226,18 +1275,14 @@ Return only the JSON object.
             )
 
             return Response(
-                {
-                    "category":
-                        category,
-
-                    "color":
-                        color,
-
-                    "season":
-                        season
-                },
-                status=status.HTTP_200_OK
-            )
+    {
+        "category": category,
+        "color": color,
+        "season": season,
+        "description": description
+    },
+    status=status.HTTP_200_OK
+)
 
         except json.JSONDecodeError as error:
             print(

@@ -28,6 +28,11 @@ class ClothingItem(models.Model):
         max_length=100
     )
 
+    description = models.TextField(
+        blank=True,
+        default=""
+    )
+
     image = models.ImageField(
         upload_to="clothing_images/"
     )
