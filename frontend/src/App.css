@@ -868,24 +868,24 @@
   z-index: 6;
 }
 
-.saved-outfit-accessory-0,
-.saved-outfit-accessory-1,
-.saved-outfit-accessory-2,
-.saved-outfit-accessory-3 {
-  right: 55px;
+.saved-outfit-accessory-0 {
+  top: 75px;
+  right: 40px;
 }
 
-.saved-outfit-accessory-0 {
-  top: 35px;
-}
 .saved-outfit-accessory-1 {
-  top: 90px;
+  top: 130px;
+  right: 40px;
 }
+
 .saved-outfit-accessory-2 {
-  top: 145px;
+  top: 185px;
+  right: 40px;
 }
+
 .saved-outfit-accessory-3 {
-  top: 200px;
+  top: 240px;
+  right: 40px;
 }
 
 /* =========================
@@ -1101,25 +1101,24 @@
   z-index: 6;
 }
 
-.saved-outfit-detail-accessory-0,
-.saved-outfit-detail-accessory-1,
-.saved-outfit-detail-accessory-2,
-.saved-outfit-detail-accessory-3 {
-  right: auto;
-  left: calc(50% + 130px);
+.saved-outfit-detail-accessory-0 {
+  top: 50px;
+  left: calc(50% + 140px);
 }
 
-.saved-outfit-detail-accessory-0 {
-  top: 40px;
-}
 .saved-outfit-detail-accessory-1 {
-  top: 120px;
+  top: 130px;
+  left: calc(50% + 140px);
 }
+
 .saved-outfit-detail-accessory-2 {
-  top: 200px;
+  top: 210px;
+  left: calc(50% + 140px);
 }
+
 .saved-outfit-detail-accessory-3 {
-  top: 280px;
+  top: 290px;
+  left: calc(50% + 140px);
 }
 
 .outfit-detail-items {

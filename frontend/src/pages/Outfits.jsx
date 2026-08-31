@@ -359,6 +359,28 @@ function Outfits() {
     }
   };
 
+  const renderOutfitPreviewItems = (items, prefix) => {
+    let accessoryIndex = 0;
+
+    return (items || []).map((item) => {
+      let className = `${prefix}-${item.category}`;
+
+      if (item.category === "accessory") {
+        className += ` ${prefix}-accessory-${accessoryIndex}`;
+        accessoryIndex += 1;
+      }
+
+      return (
+        <img
+          key={item.id}
+          src={"http://127.0.0.1:8000" + item.image}
+          alt={item.category}
+          className={className}
+        />
+      );
+    });
+  };
+
   /* =========================
      KOMBİN SİL
   ========================= */
@@ -447,14 +469,7 @@ function Outfits() {
                   </button>
 
                   <div className="saved-outfit-preview">
-                    {(outfit.items || []).map((item) => (
-                      <img
-                        key={item.id}
-                        src={"http://127.0.0.1:8000" + item.image}
-                        alt={item.category}
-                        className={"saved-outfit-" + item.category}
-                      />
-                    ))}
+                    {renderOutfitPreviewItems(outfit.items, "saved-outfit")}
                   </div>
                 </div>
 
@@ -510,14 +525,10 @@ function Outfits() {
 
             <div className="outfit-detail-image">
               <div className="saved-outfit-detail-preview">
-                {(selectedOutfit.items || []).map((item) => (
-                  <img
-                    key={item.id}
-                    src={"http://127.0.0.1:8000" + item.image}
-                    alt={item.category}
-                    className={"saved-outfit-detail-" + item.category}
-                  />
-                ))}
+                {renderOutfitPreviewItems(
+                  selectedOutfit.items,
+                  "saved-outfit-detail",
+                )}
               </div>
             </div>
 
