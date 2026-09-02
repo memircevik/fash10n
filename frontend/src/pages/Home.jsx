@@ -3,7 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 import Navbar from "../components/navbar";
 
-import { getClothingItems, addOutfit, getOutfits } from "../services/wardrobe";
+import {
+  getClothingItems,
+  addOutfit,
+  getOutfits,
+  generateTodayOutfit,
+} from "../services/wardrobe";
 
 function Home() {
   const navigate = useNavigate();
@@ -48,23 +53,25 @@ function Home() {
 
   const [todayOutfitOpen, setTodayOutfitOpen] = useState(false);
 
-  const [todayOutfitIndex, setTodayOutfitIndex] = useState(0);
+  const [isLoadingTodayOutfit, setIsLoadingTodayOutfit] = useState(false);
 
-  /* =========================
-     BUGÜNÜN TARİH ANAHTARI
-  ========================= */
+  const [showSaveTodayOutfitModal, setShowSaveTodayOutfitModal] =
+    useState(false);
+  const [todayOutfitName, setTodayOutfitName] = useState("");
+  const [todayOutfitSaveError, setTodayOutfitSaveError] = useState("");
+  const [isSavingTodayOutfit, setIsSavingTodayOutfit] = useState(false);
 
-  const todayKey = useMemo(() => {
-    const now = new Date();
+  // Rolling history of the last couple of generated outfits (oldest
+  // first), sent to the backend so refresh can rule out more than just
+  // the single last choice and actually rotate through the wardrobe
+  // instead of ping-ponging between two looks.
+  const [todayOutfitHistory, setTodayOutfitHistory] = useState([]);
 
-    const year = now.getFullYear();
-
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-
-    const day = String(now.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  }, []);
+  // Shown briefly whenever the backend reports that every distinct
+  // outfit it could build from the current weather-appropriate wardrobe
+  // has already been used this cycle, and it is starting over (so some
+  // pieces may repeat from here on).
+  const [cycleResetNotice, setCycleResetNotice] = useState(false);
 
   /* =========================
      GARDIROP
@@ -163,71 +170,110 @@ function Home() {
   }, [clothingItems]);
 
   /* =========================
-     BASİT HASH
+     BUGÜNÜN KOMBİNİNİ YÜKLE
   ========================= */
 
-  const createSeed = (text) => {
-    let hash = 0;
-
-    for (let i = 0; i < text.length; i += 1) {
-      hash = (hash << 5) - hash + text.charCodeAt(i);
-
-      hash |= 0;
-    }
-
-    return Math.abs(hash);
-  };
-
-  /* =========================
-     BUGÜNÜN KOMBİNİNİ OLUŞTUR
-  ========================= */
-
-  const generateTodayOutfit = (index = 0) => {
-    const { top, bottom, footwear, outerwear, accessory } = categoryItems;
-
-    if (!top.length || !bottom.length || !footwear.length) {
+  const loadTodayOutfit = async (previousOutfit = null, recentOutfits = []) => {
+    if (!clothingItems.length) {
       setTodayOutfit(null);
 
       return;
     }
 
-    const seedBase = `${todayKey}-${index}`;
+    try {
+      setIsLoadingTodayOutfit(true);
 
-    const topSeed = createSeed(seedBase + "-top");
+      if (!navigator.geolocation) {
+        throw new Error("Tarayıcın konum bilgisini desteklemiyor.");
+      }
 
-    const bottomSeed = createSeed(seedBase + "-bottom");
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000,
+        });
+      });
 
-    const footwearSeed = createSeed(seedBase + "-footwear");
+      const latitude = position.coords.latitude;
 
-    const outerSeed = createSeed(seedBase + "-outer");
+      const longitude = position.coords.longitude;
 
-    const accessorySeed = createSeed(seedBase + "-accessory");
+      console.log("TODAY OUTFIT LOCATION:", {
+        latitude,
+        longitude,
+      });
 
-    const selectedTop = top[topSeed % top.length];
+      console.log("PREVIOUS OUTFIT SENT:", previousOutfit);
+      console.log("RECENT OUTFITS SENT:", recentOutfits);
 
-    const selectedBottom = bottom[bottomSeed % bottom.length];
+      const data = await generateTodayOutfit(
+        latitude,
+        longitude,
+        previousOutfit,
+        recentOutfits,
+      );
 
-    const selectedFootwear = footwear[footwearSeed % footwear.length];
+      console.log("TODAY OUTFIT RESPONSE:", data);
 
-    let selectedOuterwear = null;
+      const top = clothingItems.find((item) => item.id === data.top_id);
 
-    if (outerwear.length && outerSeed % 2 === 0) {
-      selectedOuterwear = outerwear[outerSeed % outerwear.length];
+      const bottom = clothingItems.find((item) => item.id === data.bottom_id);
+
+      const footwear = clothingItems.find(
+        (item) => item.id === data.footwear_id,
+      );
+
+      const outerwear = data.outerwear_id
+        ? clothingItems.find((item) => item.id === data.outerwear_id) || null
+        : null;
+
+      const accessories = Array.isArray(data.accessory_ids)
+        ? data.accessory_ids
+            .map((id) => clothingItems.find((item) => item.id === id))
+            .filter(Boolean)
+        : [];
+
+      setTodayOutfit({
+        top: top || null,
+        bottom: bottom || null,
+        footwear: footwear || null,
+        outerwear,
+        accessories,
+      });
+
+      const generatedOutfitSignature = {
+        top_id: data.top_id ?? null,
+        bottom_id: data.bottom_id ?? null,
+        footwear_id: data.footwear_id ?? null,
+        outerwear_id: data.outerwear_id ?? null,
+        accessory_ids: Array.isArray(data.accessory_ids)
+          ? data.accessory_ids
+          : [],
+      };
+
+      setTodayOutfitHistory((previousHistory) => {
+        if (data.cycle_reset) {
+          return [generatedOutfitSignature];
+        }
+
+        return [...previousHistory, generatedOutfitSignature];
+      });
+
+      // The backend only sets cycle_reset once it has genuinely used up
+      // every distinct top/bottom/footwear combination it could build
+      // for today's weather and had to start the rotation over — let
+      // the user know instead of silently repeating pieces.
+      if (data.cycle_reset) {
+        setCycleResetNotice(true);
+      }
+    } catch (error) {
+      console.error("Today outfit error:", error);
+
+      setTodayOutfit(null);
+    } finally {
+      setIsLoadingTodayOutfit(false);
     }
-
-    let selectedAccessory = null;
-
-    if (accessory.length && accessorySeed % 2 === 0) {
-      selectedAccessory = accessory[accessorySeed % accessory.length];
-    }
-
-    setTodayOutfit({
-      top: selectedTop,
-      bottom: selectedBottom,
-      outerwear: selectedOuterwear,
-      footwear: selectedFootwear,
-      accessory: selectedAccessory,
-    });
   };
 
   /* =========================
@@ -236,33 +282,50 @@ function Home() {
   ========================= */
 
   useEffect(() => {
-    if (
-      !categoryItems.top.length ||
-      !categoryItems.bottom.length ||
-      !categoryItems.footwear.length
-    ) {
+    if (!clothingItems.length) {
       setTodayOutfit(null);
 
       return;
     }
 
-    generateTodayOutfit(todayOutfitIndex);
-  }, [
-    categoryItems.top.length,
-    categoryItems.bottom.length,
-    categoryItems.footwear.length,
-    categoryItems.outerwear.length,
-    categoryItems.accessory.length,
-    todayKey,
-    todayOutfitIndex,
-  ]);
+    loadTodayOutfit();
+  }, [clothingItems]);
+
+  /* =========================
+     DÖNGÜ SIFIRLANDI BİLDİRİMİ
+  ========================= */
 
   /* =========================
      BUGÜNÜN KOMBİNİNİ YENİLE
   ========================= */
 
   const regenerateTodayOutfit = () => {
-    setTodayOutfitIndex((current) => current + 1);
+    setCycleResetNotice(false);
+
+    if (!todayOutfit) {
+      loadTodayOutfit();
+
+      return;
+    }
+
+    const previousOutfit = {
+      top_id: todayOutfit.top?.id ?? null,
+
+      bottom_id: todayOutfit.bottom?.id ?? null,
+
+      footwear_id: todayOutfit.footwear?.id ?? null,
+
+      outerwear_id: todayOutfit.outerwear?.id ?? null,
+
+      accessory_ids: Array.isArray(todayOutfit.accessories)
+        ? todayOutfit.accessories.map((item) => item.id)
+        : [],
+    };
+
+    console.log("REGENERATING FROM:", previousOutfit);
+    console.log("REGENERATING WITH HISTORY:", todayOutfitHistory);
+
+    loadTodayOutfit(previousOutfit, todayOutfitHistory);
   };
 
   /* =========================
@@ -284,7 +347,6 @@ function Home() {
       if (currentItem === null) {
         return {
           ...current,
-
           [category]: direction === 1 ? items[0] : items[items.length - 1],
         };
       }
@@ -324,6 +386,10 @@ function Home() {
     });
   };
 
+  /* =========================
+     AKSESUAR SEÇ
+  ========================= */
+
   const toggleAccessory = (item) => {
     setSelectedItems((current) => {
       const alreadySelected = current.accessory.some(
@@ -333,6 +399,7 @@ function Home() {
       if (alreadySelected) {
         return {
           ...current,
+
           accessory: current.accessory.filter(
             (selected) => selected.id !== item.id,
           ),
@@ -341,6 +408,7 @@ function Home() {
 
       return {
         ...current,
+
         accessory: [...current.accessory, item],
       };
     });
@@ -448,6 +516,7 @@ function Home() {
         </div>
       );
     }
+
     const selectedItem = selectedItems[category];
 
     const items = categoryItems[category];
@@ -646,6 +715,78 @@ function Home() {
   };
 
   /* =========================
+     BUGÜNÜN KOMBİNİNİ KAYDET
+  ========================= */
+
+  const openSaveTodayOutfitModal = () => {
+    if (!todayOutfit) {
+      return;
+    }
+
+    setTodayOutfitName("");
+    setTodayOutfitSaveError("");
+    setIsSavingTodayOutfit(false);
+    setShowSaveTodayOutfitModal(true);
+  };
+
+  const closeSaveTodayOutfitModal = () => {
+    if (isSavingTodayOutfit) {
+      return;
+    }
+
+    setShowSaveTodayOutfitModal(false);
+    setTodayOutfitName("");
+    setTodayOutfitSaveError("");
+  };
+
+  const handleSaveTodayOutfit = async () => {
+    const trimmedName = todayOutfitName.trim();
+
+    if (!trimmedName) {
+      setTodayOutfitSaveError("Kombin adı yazmalısın.");
+      return;
+    }
+
+    if (!todayOutfit) {
+      setTodayOutfitSaveError("Kaydedilecek kombin bulunamadı.");
+      return;
+    }
+
+    const itemIds = [
+      todayOutfit.top?.id,
+      todayOutfit.bottom?.id,
+      todayOutfit.outerwear?.id,
+      todayOutfit.footwear?.id,
+      ...(Array.isArray(todayOutfit.accessories)
+        ? todayOutfit.accessories.map((item) => item.id)
+        : []),
+    ].filter(Boolean);
+
+    if (itemIds.length === 0) {
+      setTodayOutfitSaveError("Kombinde kaydedilecek parça bulunamadı.");
+      return;
+    }
+
+    try {
+      setIsSavingTodayOutfit(true);
+      setTodayOutfitSaveError("");
+
+      const savedOutfit = await addOutfit(trimmedName, itemIds);
+
+      setRecentOutfits((current) => [savedOutfit, ...current].slice(0, 3));
+
+      setShowSaveTodayOutfitModal(false);
+      setTodayOutfitName("");
+      setTodayOutfitSaveError("");
+    } catch (error) {
+      console.error("Today outfit save error:", error);
+      setTodayOutfitSaveError(error.message || "Kombin kaydedilemedi.");
+    } finally {
+      setIsSavingTodayOutfit(false);
+    }
+  };
+
+  /* =========================
      BUGÜNÜN KOMBİN PARÇASI
   ========================= */
 
@@ -709,6 +850,24 @@ function Home() {
     <>
       <Navbar />
 
+      {cycleResetNotice && (
+        <div className="cycle-reset-toast" role="status">
+          <span>
+            Bu hava için oluşturabileceğimiz tüm farklı kombinler denendi —
+            kombinler şimdi baştan tekrar kullanılmaya başlanacak.
+          </span>
+
+          <button
+            type="button"
+            className="cycle-reset-toast-close"
+            onClick={() => setCycleResetNotice(false)}
+            aria-label="Bildirimi kapat"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <main className="home-page">
         <section className="home-cards">
           {/* =========================
@@ -749,6 +908,10 @@ function Home() {
                   {renderTodayOutfitPiece(todayOutfit.footwear, "footwear")}
 
                   {renderTodayAccessories()}
+                </div>
+              ) : isLoadingTodayOutfit ? (
+                <div className="today-outfit-empty">
+                  Bugünün kombini hazırlanıyor...
                 </div>
               ) : (
                 <div className="today-outfit-empty">
@@ -1009,16 +1172,99 @@ function Home() {
                 type="button"
                 className="today-outfit-refresh"
                 onClick={regenerateTodayOutfit}
+                disabled={isLoadingTodayOutfit || isSavingTodayOutfit}
               >
-                Yenile
+                {isLoadingTodayOutfit ? "Hazırlanıyor..." : "Yenile"}
+              </button>
+
+              <button
+                type="button"
+                className="today-outfit-save-button"
+                onClick={openSaveTodayOutfitModal}
+                disabled={isLoadingTodayOutfit || isSavingTodayOutfit}
+              >
+                Kombinlerime Ekle
               </button>
 
               <button
                 type="button"
                 className="today-outfit-close-button"
                 onClick={() => setTodayOutfitOpen(false)}
+                disabled={isSavingTodayOutfit}
               >
                 Kapat
+              </button>
+            </div>
+
+            {todayOutfitSaveError && (
+              <p className="today-outfit-save-error" role="alert">
+                {todayOutfitSaveError}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showSaveTodayOutfitModal && (
+        <div
+          className="today-outfit-save-overlay"
+          onClick={closeSaveTodayOutfitModal}
+        >
+          <div
+            className="today-outfit-save-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="today-outfit-save-close"
+              onClick={closeSaveTodayOutfitModal}
+              disabled={isSavingTodayOutfit}
+            >
+              ×
+            </button>
+
+            <h3>Kombine bir isim ver</h3>
+
+            <input
+              type="text"
+              value={todayOutfitName}
+              onChange={(event) => {
+                setTodayOutfitName(event.target.value);
+                setTodayOutfitSaveError("");
+              }}
+              placeholder="Örn. Günlük kombin"
+              disabled={isSavingTodayOutfit}
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleSaveTodayOutfit();
+                }
+              }}
+            />
+
+            {todayOutfitSaveError && (
+              <p className="today-outfit-save-error" role="alert">
+                {todayOutfitSaveError}
+              </p>
+            )}
+
+            <div className="today-outfit-save-actions">
+              <button
+                type="button"
+                className="today-outfit-save-cancel"
+                onClick={closeSaveTodayOutfitModal}
+                disabled={isSavingTodayOutfit}
+              >
+                İptal
+              </button>
+
+              <button
+                type="button"
+                className="today-outfit-save-confirm"
+                onClick={handleSaveTodayOutfit}
+                disabled={isSavingTodayOutfit}
+              >
+                {isSavingTodayOutfit ? "Kaydediliyor..." : "Kaydet"}
               </button>
             </div>
           </div>

@@ -42,6 +42,8 @@ export async function addClothingItems(
   season,
   color,
   description,
+  accessoryType = "",
+  secondaryColor = "",
 ) {
   let accessToken = localStorage.getItem("access_token");
 
@@ -52,6 +54,8 @@ export async function addClothingItems(
   formData.append("season", season);
   formData.append("color", color);
   formData.append("description", description);
+  formData.append("accessory_type", accessoryType || "");
+  formData.append("secondary_color", secondaryColor || "");
 
   let response = await fetch(
     "http://127.0.0.1:8000/api/wardrobe/clothing-items/",
@@ -400,6 +404,55 @@ export async function analyzeClothing(imageFile) {
 
   if (!response.ok) {
     throw new Error(data.detail || "Kıyafet analiz edilemedi.");
+  }
+
+  return data;
+}
+
+export async function generateTodayOutfit(
+  latitude,
+  longitude,
+  previousOutfit = null,
+  recentOutfits = [],
+) {
+  let accessToken = localStorage.getItem("access_token");
+
+  const body = JSON.stringify({
+    latitude,
+    longitude,
+    previous_outfit: previousOutfit,
+    recent_outfits: recentOutfits,
+  });
+
+  let response = await fetch(
+    "http://127.0.0.1:8000/api/wardrobe/today-outfit/",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body,
+    },
+  );
+
+  if (response.status === 401) {
+    accessToken = await refreshAccessToken();
+
+    response = await fetch("http://127.0.0.1:8000/api/wardrobe/today-outfit/", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body,
+    });
+  }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Bugünün kombini oluşturulamadı.");
   }
 
   return data;

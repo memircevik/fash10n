@@ -51,6 +51,8 @@ function Wardrobe() {
   const [season, setSeason] = useState(["summer"]);
   const [color, setColor] = useState("#000000");
   const [description, setDescription] = useState("");
+  const [accessoryType, setAccessoryType] = useState("");
+  const [secondaryColor, setSecondaryColor] = useState("");
 
   const [uploadError, setUploadError] = useState("");
 
@@ -203,6 +205,8 @@ function Wardrobe() {
     setSeason(["summer"]);
     setColor("#000000");
     setDescription("");
+    setAccessoryType("");
+    setSecondaryColor("");
 
     setIsRemovingBackground(true);
 
@@ -234,6 +238,9 @@ function Wardrobe() {
       if (analysis.description) {
         setDescription(analysis.description);
       }
+
+      setAccessoryType(analysis.accessory_type || "");
+      setSecondaryColor(analysis.secondary_color || "");
 
       const preview = URL.createObjectURL(blob);
 
@@ -269,6 +276,9 @@ function Wardrobe() {
         if (analysis.description) {
           setDescription(analysis.description);
         }
+
+        setAccessoryType(analysis.accessory_type || "");
+        setSecondaryColor(analysis.secondary_color || "");
 
         setUploadError("");
       } catch (analysisError) {
@@ -325,6 +335,8 @@ function Wardrobe() {
         season,
         color,
         description,
+        category === "accessory" ? accessoryType : "",
+        secondaryColor,
       );
 
       const updatedItems = await getClothingItems();
@@ -498,6 +510,29 @@ function Wardrobe() {
                     <option value="accessory">Aksesuar</option>
                   </select>
                 </div>
+
+                {category === "accessory" && (
+                  <div className="upload-field">
+                    <label>Aksesuar Tipi</label>
+
+                    <select
+                      value={accessoryType}
+                      onChange={(event) => setAccessoryType(event.target.value)}
+                    >
+                      <option value="">Seçilmedi</option>
+                      <option value="watch">Saat</option>
+                      <option value="sunglasses">Güneş Gözlüğü</option>
+                      <option value="eyewear">Gözlük</option>
+                      <option value="bag">Çanta</option>
+                      <option value="belt">Kemer</option>
+                      <option value="hat">Şapka</option>
+                      <option value="scarf">Atkı / Fular</option>
+                      <option value="tie">Kravat</option>
+                      <option value="jewelry">Takı</option>
+                      <option value="other">Diğer</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="upload-field">
                   <label>Mevsim</label>

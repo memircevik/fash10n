@@ -30,12 +30,16 @@ function Outfits() {
     bottom: null,
     outerwear: null,
     footwear: null,
-    accessory: null,
+    accessory: [],
   });
 
   const [editOutfitName, setEditOutfitName] = useState("");
   const [editError, setEditError] = useState("");
   const [isUpdatingOutfit, setIsUpdatingOutfit] = useState(false);
+
+  const [editAccessoryPage, setEditAccessoryPage] = useState(0);
+
+  const editAccessoryPageSize = 4;
 
   /* =========================
      KOMBİNLERİ GETİR
@@ -119,7 +123,9 @@ function Outfits() {
   const categoryItems = {
     top: clothingItems.filter((item) => item.category === "top"),
 
-    bottom: clothingItems.filter((item) => item.category === "bottom"),
+    bottom: clothingItems.filter(
+      (item) => item.category === "pants" || item.category === "shorts",
+    ),
 
     outerwear: clothingItems.filter((item) => item.category === "outerwear"),
 
@@ -151,15 +157,24 @@ function Outfits() {
         bottom: null,
         outerwear: null,
         footwear: null,
-        accessory: null,
+        accessory: [],
       };
 
       (outfit.items || []).forEach((item) => {
-        selected[item.category] =
+        const resolvedItem =
           items.find((clothingItem) => clothingItem.id === item.id) || item;
+
+        if (item.category === "accessory") {
+          selected.accessory.push(resolvedItem);
+        } else if (item.category === "pants" || item.category === "shorts") {
+          selected.bottom = resolvedItem;
+        } else {
+          selected[item.category] = resolvedItem;
+        }
       });
 
       setEditSelectedItems(selected);
+      setEditAccessoryPage(0);
       setEditOutfitName(outfit.name || "");
 
       setSelectedOutfit(null);
@@ -183,13 +198,36 @@ function Outfits() {
     setEditingOutfit(null);
     setEditError("");
     setEditOutfitName("");
+    setEditAccessoryPage(0);
 
     setEditSelectedItems({
       top: null,
       bottom: null,
       outerwear: null,
       footwear: null,
-      accessory: null,
+      accessory: [],
+    });
+  };
+
+  const toggleEditAccessory = (item) => {
+    setEditSelectedItems((current) => {
+      const alreadySelected = current.accessory.some(
+        (selected) => selected.id === item.id,
+      );
+
+      if (alreadySelected) {
+        return {
+          ...current,
+          accessory: current.accessory.filter(
+            (selected) => selected.id !== item.id,
+          ),
+        };
+      }
+
+      return {
+        ...current,
+        accessory: [...current.accessory, item],
+      };
     });
   };
 
@@ -198,6 +236,10 @@ function Outfits() {
   ========================= */
 
   const moveEditCarousel = (category, direction) => {
+    if (category === "accessory") {
+      return;
+    }
+
     const items = categoryItems[category];
 
     if (!items.length) {
@@ -256,6 +298,110 @@ function Outfits() {
   ========================= */
 
   const renderEditCarousel = (category, title) => {
+    if (category === "accessory") {
+      const selectedAccessories = editSelectedItems.accessory || [];
+      const items = categoryItems.accessory;
+
+      const accessoryPageCount = Math.ceil(
+        items.length / editAccessoryPageSize,
+      );
+
+      const visibleAccessories = items.slice(
+        editAccessoryPage * editAccessoryPageSize,
+        editAccessoryPage * editAccessoryPageSize + editAccessoryPageSize,
+      );
+
+      return (
+        <div className="outfit-carousel accessory-carousel">
+          <h3>{title}</h3>
+
+          <div className="accessory-selection">
+            <button
+              type="button"
+              className="accessory-carousel-arrow"
+              disabled={editAccessoryPage <= 0}
+              onClick={(event) => {
+                event.stopPropagation();
+
+                setEditAccessoryPage((current) => Math.max(current - 1, 0));
+              }}
+            >
+              ‹
+            </button>
+
+            <div className="accessory-selection-grid">
+              {visibleAccessories.length === 0 ? (
+                <div className="carousel-placeholder">
+                  Bu kategoride aksesuar yok.
+                </div>
+              ) : (
+                visibleAccessories.map((item) => {
+                  const isSelected = selectedAccessories.some(
+                    (selected) => selected.id === item.id,
+                  );
+
+                  return (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={
+                        "accessory-selection-item" +
+                        (isSelected ? " selected" : "")
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+
+                        toggleEditAccessory(item);
+                      }}
+                    >
+                      <img
+                        src={"http://127.0.0.1:8000" + item.image}
+                        alt="Aksesuar"
+                      />
+
+                      {isSelected && (
+                        <span className="accessory-selection-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="accessory-carousel-arrow"
+              disabled={
+                accessoryPageCount === 0 ||
+                editAccessoryPage >= accessoryPageCount - 1
+              }
+              onClick={(event) => {
+                event.stopPropagation();
+
+                setEditAccessoryPage((current) =>
+                  Math.min(current + 1, accessoryPageCount - 1),
+                );
+              }}
+            >
+              ›
+            </button>
+          </div>
+
+          <div className="accessory-selection-count">
+            {selectedAccessories.length > 0
+              ? `${selectedAccessories.length} aksesuar seçildi`
+              : "Aksesuar seçebilirsin"}
+          </div>
+
+          {accessoryPageCount > 1 && (
+            <div className="accessory-page-indicator">
+              {editAccessoryPage + 1} / {accessoryPageCount}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     const selectedItem = editSelectedItems[category];
     const items = categoryItems[category];
 
@@ -329,9 +475,13 @@ function Outfits() {
       return;
     }
 
-    const itemIds = Object.values(editSelectedItems)
-      .filter(Boolean)
-      .map((item) => item.id);
+    const itemIds = [
+      editSelectedItems.top?.id,
+      editSelectedItems.bottom?.id,
+      editSelectedItems.outerwear?.id,
+      editSelectedItems.footwear?.id,
+      ...(editSelectedItems.accessory || []).map((item) => item.id),
+    ].filter(Boolean);
 
     try {
       setIsUpdatingOutfit(true);
@@ -637,16 +787,17 @@ function Outfits() {
                     />
                   )}
 
-                  {editSelectedItems.accessory && (
+                  {(editSelectedItems.accessory || []).map((item, index) => (
                     <img
-                      src={
-                        "http://127.0.0.1:8000" +
-                        editSelectedItems.accessory.image
-                      }
+                      key={item.id}
+                      src={"http://127.0.0.1:8000" + item.image}
                       alt="Aksesuar"
-                      className="selected-outfit-item accessory-preview"
+                      className={
+                        "selected-outfit-item accessory-preview " +
+                        `accessory-preview-${index}`
+                      }
                     />
-                  )}
+                  ))}
                 </div>
               </div>
             </div>

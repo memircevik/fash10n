@@ -2092,6 +2092,40 @@
   z-index: 2500;
 }
 
+.cycle-reset-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(520px, calc(100% - 40px));
+  background: #2b2b2b;
+  color: #ffffff;
+  padding: 14px 16px 14px 20px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  line-height: 1.5;
+  z-index: 3000;
+}
+
+.cycle-reset-toast-close {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.cycle-reset-toast-close:hover {
+  opacity: 0.75;
+}
+
 .today-outfit-modal {
   width: min(700px, 100%);
   background: #ffffff;
@@ -2326,4 +2360,109 @@
 .home-outfit-accessory-3 {
   top: 279px;
   left: calc(50% + 85px);
+}
+
+/* =========================
+   BUGÜNÜN KOMBİNİNİ KAYDET
+========================= */
+
+.today-outfit-save-button {
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid #111111 !important;
+}
+
+.today-outfit-save-button:hover {
+  background: #f2f2f2;
+}
+
+.today-outfit-save-error {
+  margin: 10px 0 0;
+  text-align: center;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.today-outfit-save-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 3200;
+}
+
+.today-outfit-save-modal {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.2);
+}
+
+.today-outfit-save-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  cursor: pointer;
+  color: #111111;
+}
+
+.today-outfit-save-modal h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #111111;
+}
+
+.today-outfit-save-modal input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cfcfcf;
+  border-radius: 6px;
+  padding: 11px 12px;
+  font: inherit;
+  outline: none;
+}
+
+.today-outfit-save-modal input:focus {
+  border-color: #111111;
+}
+
+.today-outfit-save-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.today-outfit-save-actions button {
+  border: none;
+  border-radius: 4px;
+  padding: 9px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.today-outfit-save-cancel {
+  background: #e5e5e5;
+  color: #111111;
+}
+
+.today-outfit-save-confirm {
+  background: #111111;
+  color: #ffffff;
+}
+
+.today-outfit-save-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

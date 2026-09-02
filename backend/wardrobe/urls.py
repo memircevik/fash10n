@@ -5,6 +5,7 @@ from .views import (
     RemoveBackgroundView,
     OutfitView,
     AnalyzeClothingView,
+    TodayOutfitView,
 )
 
 urlpatterns = [
@@ -42,5 +43,10 @@ urlpatterns = [
         "outfits/<int:pk>/",
         OutfitView.as_view(),
         name="outfit-detail",
+    ),
+
+    path(
+    "today-outfit/",
+    TodayOutfitView.as_view(),
     ),
 ]
