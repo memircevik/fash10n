@@ -2783,14 +2783,25 @@ Do not return explanations outside the "reason" field.
                 ):
                     accessory_type = get_accessory_type(accessory_item)
 
-                    if accessory_type is not None:
-                        if accessory_type in seen_accessory_types:
-                            # Same type already kept (e.g. a second
-                            # watch) — drop this one instead of
-                            # rejecting the whole outfit.
-                            continue
+                    # NOTE: intentionally NOT gated behind
+                    # "accessory_type is not None" anymore. When the
+                    # type can't be determined (blank structured field
+                    # AND no keyword match in the description), two
+                    # such "unknown" accessories used to sail through
+                    # completely unchecked — which is exactly how two
+                    # real watches could end up in the same outfit
+                    # (e.g. a description that never says "watch"
+                    # literally). Treating None as its own bucket
+                    # means at most one unclassifiable accessory is
+                    # ever allowed through too.
+                    if accessory_type in seen_accessory_types:
+                        # Same type already kept (e.g. a second
+                        # watch, or a second unclassifiable item) —
+                        # drop this one instead of rejecting the
+                        # whole outfit.
+                        continue
 
-                        seen_accessory_types.add(accessory_type)
+                    seen_accessory_types.add(accessory_type)
 
                     deduped_accessory_items.append(accessory_item)
                     deduped_accessory_ids.append(accessory_id)
@@ -3085,14 +3096,15 @@ Do not return explanations outside the "reason" field.
 
                     accessory_type = get_accessory_type(accessory_item)
 
-                    if (
-                        accessory_type is not None
-                        and accessory_type in seen_accessory_types
-                    ):
+                    # Same reasoning as the AI-path dedup above: don't
+                    # exempt "unknown type" (None) from the check, or
+                    # two unclassifiable accessories (e.g. two watches
+                    # whose descriptions don't contain a matching
+                    # keyword) can both slip into the fallback outfit.
+                    if accessory_type in seen_accessory_types:
                         continue
 
-                    if accessory_type is not None:
-                        seen_accessory_types.add(accessory_type)
+                    seen_accessory_types.add(accessory_type)
 
                     fallback_accessory_ids.append(accessory["id"])
 

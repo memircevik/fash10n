@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../services/auth";
+import logo from "../assets/logo.png";
 
 function Register() {
   const [username, setUsername] = useState("");
@@ -8,6 +9,7 @@ function Register() {
   const [password, setPassword] = useState("");
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -36,11 +38,11 @@ function Register() {
     }
 
     setErrors({});
+    setIsSubmitting(true);
 
     try {
       await register(username, email, password);
 
-      console.log("Kayıt başarılı");
       navigate("/");
     } catch (error) {
       console.error("Register failed:", error);
@@ -48,21 +50,32 @@ function Register() {
       setErrors({
         general: error.message,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="login-page">
-      <div className="login-container">
-        <h1>Fash10n</h1>
+    <main className="auth-page">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <img src={logo} alt="Fash10n" />
+          <span>Fash10n</span>
+        </div>
 
-        <form onSubmit={handleSubmit} className="login-form" noValidate>
-          <div className="form-row">
-            <label htmlFor="username">Kullanıcı adı:</label>
+        <h1>Hesap oluştur</h1>
+        <p className="auth-subtitle">
+          Gardırobunu düzenlemeye başlamak için birkaç bilgi gerekiyor.
+        </p>
+
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          <div className="auth-field">
+            <label htmlFor="username">Kullanıcı adı</label>
 
             <input
               id="username"
               type="text"
+              autoComplete="username"
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
@@ -71,17 +84,21 @@ function Register() {
                   username: "",
                 }));
               }}
+              disabled={isSubmitting}
             />
+
+            {errors.username && (
+              <p className="auth-field-error">{errors.username}</p>
+            )}
           </div>
 
-          {errors.username && <p className="form-error">{errors.username}</p>}
-
-          <div className="form-row">
-            <label htmlFor="email">E-posta:</label>
+          <div className="auth-field">
+            <label htmlFor="email">E-posta</label>
 
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -90,17 +107,19 @@ function Register() {
                   email: "",
                 }));
               }}
+              disabled={isSubmitting}
             />
+
+            {errors.email && <p className="auth-field-error">{errors.email}</p>}
           </div>
 
-          {errors.email && <p className="form-error">{errors.email}</p>}
-
-          <div className="form-row">
-            <label htmlFor="password">Şifre:</label>
+          <div className="auth-field">
+            <label htmlFor="password">Şifre</label>
 
             <input
               id="password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -109,18 +128,23 @@ function Register() {
                   password: "",
                 }));
               }}
+              disabled={isSubmitting}
             />
-          </div>
 
-          {errors.password && <p className="form-error">{errors.password}</p>}
+            {errors.password && (
+              <p className="auth-field-error">{errors.password}</p>
+            )}
+          </div>
 
           {errors.general && <p className="form-error">{errors.general}</p>}
 
-          <button type="submit">Kayıt Ol</button>
+          <button type="submit" className="auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Kayıt olunuyor..." : "Kayıt Ol"}
+          </button>
         </form>
 
-        <p className="register-text">
-          Zaten hesabın var mı? <a href="/">Giriş yap.</a>
+        <p className="auth-switch">
+          Zaten hesabın var mı? <a href="/">Giriş yap</a>
         </p>
       </div>
     </main>
